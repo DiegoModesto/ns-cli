@@ -1,9 +1,9 @@
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { runUpload, type UploadDeps, type UploadOptions } from '../../src/commands/upload.js';
 import type { Project } from '../../src/core/config.js';
 
-const root = join('/work', 'project');
+const root = resolve('/work/project');
 const project = {
   root,
   fileCabinetDir: join(root, 'src/FileCabinet'),
@@ -74,7 +74,7 @@ describe('runUpload', () => {
   it('lists compiled files that do not exist', async () => {
     const deps = fakeDeps({ exists: vi.fn((file: string) => !file.endsWith('b.js')) });
     await expect(runUpload(['src/Source/a.ts', 'src/Source/b.ts'], project, defaults, deps)).rejects.toThrow(
-      /Compiled file not found:\n {2}- src\/FileCabinet\/SuiteScripts\/b\.js$/,
+      `Compiled file not found:\n  - ${join('src', 'FileCabinet', 'SuiteScripts', 'b.js')}`,
     );
     expect(deps.suitecloud.upload).not.toHaveBeenCalled();
   });

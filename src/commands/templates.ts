@@ -1,13 +1,17 @@
 import { type Command, Option } from 'commander';
 import { NskError } from '../errors.js';
 import { findTemplate, loadTemplates, readTemplate, type TemplateLanguage } from '../templates.js';
+import { formatExamples, type Messages } from '../i18n.js';
 
-export function registerTemplates(program: Command): void {
-  const templates = program.command('templates').description('Browse the built-in SuiteScript templates');
+export function registerTemplates(program: Command, t: Messages): void {
+  const templates = program
+    .command('templates')
+    .description(t.templates.description)
+    .addHelpText('after', formatExamples(t.help.examples, t.templates.examples));
 
   templates
     .command('list')
-    .description('List available templates')
+    .description(t.templates.list)
     .action(() => {
       for (const template of loadTemplates()) {
         const languages = Object.keys(template.files).join(', ');
@@ -17,10 +21,10 @@ export function registerTemplates(program: Command): void {
 
   templates
     .command('show')
-    .description('Print a template')
-    .argument('<id>', 'template id (see "nsk templates list")')
+    .description(t.templates.show)
+    .argument('<id>', t.templates.id)
     .addOption(
-      new Option('-l, --language <language>', 'template language')
+      new Option('-l, --language <language>', t.templates.language)
         .choices(['typescript', 'javascript', 'xml'])
         .default('typescript'),
     )

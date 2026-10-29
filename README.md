@@ -62,6 +62,16 @@ Rode dentro de um projeto SuiteCloud (em qualquer subpasta):
 
 Termina com código `1` se algo estiver faltando (CLI não instalado, `ns.config.json` inválido, conta não configurada).
 
+### Ajuda e idioma
+
+```bash
+nsk --help                   # comandos agrupados, com explicação
+nsk deploy --help            # opções e exemplos de um comando (ou: nsk help deploy)
+nsk --help --lang en         # ajuda em inglês
+```
+
+A ajuda está em português e inglês. O idioma vem de `--lang pt|en` (vale em qualquer posição do comando), da variável `NSK_LANG` ou do idioma do sistema (`LC_ALL`, `LC_MESSAGES`, `LANG`): tudo que começa com `pt` mostra português, o resto mostra inglês. Para fixar: `export NSK_LANG=pt`. As mensagens de erro e de progresso continuam em inglês.
+
 ### `nsk init`
 
 Cria um projeto SuiteCloud já pronto para TypeScript:

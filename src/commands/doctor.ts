@@ -3,6 +3,7 @@ import type { Command } from 'commander';
 import { loadProject } from '../core/config.js';
 import { SuiteCloud } from '../core/suitecloud.js';
 import { NskError } from '../errors.js';
+import { formatExamples, type Messages } from '../i18n.js';
 
 interface Check {
   label: string;
@@ -11,10 +12,11 @@ interface Check {
   hint?: string;
 }
 
-export function registerDoctor(program: Command): void {
+export function registerDoctor(program: Command, t: Messages): void {
   program
     .command('doctor')
-    .description('Check the environment and show how nsk sees the current project')
+    .description(t.doctor.description)
+    .addHelpText('after', formatExamples(t.help.examples, t.doctor.examples))
     .action(async () => {
       const checks = await runChecks(process.cwd());
       for (const check of checks) {

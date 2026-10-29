@@ -9,13 +9,15 @@ import { SuiteCloud } from '../core/suitecloud.js';
 import { watchProject } from '../core/tsc.js';
 import { isIgnored, UploadQueue } from '../core/watch.js';
 import { NskError } from '../errors.js';
+import { formatExamples, type Messages } from '../i18n.js';
 
-export function registerWatch(program: Command): void {
+export function registerWatch(program: Command, t: Messages): void {
   program
     .command('watch')
-    .description('Compile on save (tsc --watch) and upload every changed file in the FileCabinet')
-    .option('--no-upload', 'only compile, do not upload')
-    .option('-y, --yes', 'skip the confirmation for protected accounts', false)
+    .description(t.watch.description)
+    .option('--no-upload', t.watch.noUpload)
+    .option('-y, --yes', t.watch.yes, false)
+    .addHelpText('after', formatExamples(t.help.examples, t.watch.examples))
     .action(async (options: { upload: boolean; yes: boolean }) => {
       const project = loadProject(process.cwd());
       if (!project.typescript && !options.upload) {

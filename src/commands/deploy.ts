@@ -4,6 +4,7 @@ import { askInTerminal, type Confirm, guardProtectedAccount } from '../core/guar
 import { type AccountSpecificValues, SuiteCloud } from '../core/suitecloud.js';
 import { compileProject } from '../core/tsc.js';
 import { NskError } from '../errors.js';
+import { formatExamples, type Messages } from '../i18n.js';
 
 export interface ProjectCommandOptions {
   compile: boolean;
@@ -19,32 +20,31 @@ export interface ProjectCommandDeps {
   confirm: Confirm;
 }
 
-const asvOption = () =>
-  new Option('--asv <mode>', 'account-specific values: ERROR stops, WARNING continues (account customization only)').choices(
-    ['ERROR', 'WARNING'],
-  );
+const asvOption = (description: string) => new Option('--asv <mode>', description).choices(['ERROR', 'WARNING']);
 
-export function registerValidate(program: Command): void {
+export function registerValidate(program: Command, t: Messages): void {
   program
     .command('validate')
-    .description('Compile and validate the project (suitecloud project:validate)')
-    .option('--server', 'validate on the server instead of locally', false)
-    .addOption(asvOption())
-    .option('--no-compile', 'skip compiling first')
+    .description(t.validate.description)
+    .option('--server', t.validate.server, false)
+    .addOption(asvOption(t.validate.asv))
+    .option('--no-compile', t.validate.noCompile)
+    .addHelpText('after', formatExamples(t.help.examples, t.validate.examples))
     .action(async (options: ProjectCommandOptions) => {
       const project = loadProject(process.cwd());
       await runValidate(project, options, defaultDeps(project));
     });
 }
 
-export function registerDeploy(program: Command): void {
+export function registerDeploy(program: Command, t: Messages): void {
   program
     .command('deploy')
-    .description('Compile and deploy the project (suitecloud project:deploy)')
-    .option('--dry-run', 'preview the deployment without changing the account', false)
-    .addOption(asvOption())
-    .option('--no-compile', 'skip compiling first')
-    .option('-y, --yes', 'skip the confirmation for protected accounts', false)
+    .description(t.deploy.description)
+    .option('--dry-run', t.deploy.dryRun, false)
+    .addOption(asvOption(t.deploy.asv))
+    .option('--no-compile', t.deploy.noCompile)
+    .option('-y, --yes', t.deploy.yes, false)
+    .addHelpText('after', formatExamples(t.help.examples, t.deploy.examples))
     .action(async (options: ProjectCommandOptions) => {
       const project = loadProject(process.cwd());
       await runDeploy(project, options, defaultDeps(project));

@@ -62,6 +62,16 @@ Run it inside a SuiteCloud project (from any subfolder):
 
 It exits with code `1` when something is missing (CLI not installed, invalid `ns.config.json`, account not set up).
 
+### Help and language
+
+```bash
+nsk --help                   # grouped commands, with explanations
+nsk deploy --help            # options and examples of a command (or: nsk help deploy)
+nsk --help --lang pt         # help in Portuguese
+```
+
+The help is available in English and Portuguese. The language comes from `--lang en|pt` (anywhere in the command line), the `NSK_LANG` variable or the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`): anything starting with `pt` shows Portuguese, everything else English. To pin it: `export NSK_LANG=en`. Error and progress messages stay in English.
+
 ### `nsk init`
 
 Creates a SuiteCloud project ready for TypeScript:

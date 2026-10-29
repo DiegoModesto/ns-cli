@@ -11,6 +11,7 @@
     "cli"
   ],
   "author": "Diego Modesto",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DiegoModesto/ns-cli.git"

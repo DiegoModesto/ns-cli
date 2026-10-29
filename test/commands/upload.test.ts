@@ -74,7 +74,7 @@ describe('runUpload', () => {
   it('lists compiled files that do not exist', async () => {
     const deps = fakeDeps({ exists: vi.fn((file: string) => !file.endsWith('b.js')) });
     await expect(runUpload(['src/Source/a.ts', 'src/Source/b.ts'], project, defaults, deps)).rejects.toThrow(
-      /Compiled file not found:\n {2}- src\/FileCabinet\/SuiteScripts\/b\.js$/,
+      `Compiled file not found:\n  - ${join('src', 'FileCabinet', 'SuiteScripts', 'b.js')}`,
     );
     expect(deps.suitecloud.upload).not.toHaveBeenCalled();
   });

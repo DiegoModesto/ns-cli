@@ -86,8 +86,9 @@ export class SuiteCloud {
     return this.run(['account:setup']);
   }
 
-  listAuthIds(): Promise<string> {
-    return this.capture(['account:manageauth', '--list']);
+  /** Auth IDs configured on this machine (`account:manageauth --list`). */
+  async listAuthIds(): Promise<AuthIdEntry[]> {
+    return parseAuthIdList(await this.capture(['account:manageauth', '--list']));
   }
 
   private async exec(args: string[], stdio: 'inherit' | 'pipe'): Promise<ExecResult> {
@@ -104,6 +105,22 @@ export class SuiteCloud {
     }
     return result;
   }
+}
+
+export interface AuthIdEntry {
+  id: string;
+  /** "Role @ Account" as printed by suitecloud. */
+  description: string;
+}
+
+/** Parses `account:manageauth --list` lines ("id | Role @ Account | url"), ignoring terminal escape codes. */
+export function parseAuthIdList(output: string): AuthIdEntry[] {
+  return output
+    .replace(/\u001b\[[0-9;]*[A-Za-z]/g, '')
+    .split(/\r?\n/)
+    .map((line) => line.split('|').map((part) => part.trim()))
+    .filter((parts) => parts.length >= 2 && parts[0])
+    .map(([id, description]) => ({ id: id!, description: description ?? '' }));
 }
 
 function accountSpecificValuesArgs(value: AccountSpecificValues | undefined): string[] {

@@ -4,7 +4,7 @@
 
 A TypeScript-first CLI for NetSuite SuiteCloud projects. It is a layer on top of the official [SuiteCloud CLI](https://www.npmjs.com/package/@oracle/suitecloud-cli): `suitecloud` still handles authentication and deployment, while `nsk` handles what is manual today — compiling TypeScript, finding the right `.js` in the File Cabinet, generating typed scripts and switching accounts.
 
-> **Status:** in development (`0.0.0`). The CLI currently ships the templates, the snippets, `nsk init`, `nsk doctor`, `nsk generate`, `nsk build`, `nsk upload` and `nsk watch`; the other project commands are on the [roadmap](#roadmap).
+> **Status:** in development (`0.0.0`). Every command planned for `0.1.0` is implemented; validation against a NetSuite account is pending before the first release.
 
 ## Requirements
 
@@ -42,6 +42,8 @@ nsk templates show script-object                 # SDF object (XML) with deploym
 nsk generate user-event-script ue_sales_order    # create src/Source/ue_sales_order.ts from the template
 nsk upload src/Source/App/ue_sales_order.ts      # compile and upload the matching .js
 nsk watch                                        # compile and upload on every save
+nsk deploy                                       # compile and deploy the project
+nsk account use sandbox                          # switch the project's account
 ```
 
 ### `nsk doctor`
@@ -128,6 +130,34 @@ nsk watch --no-upload  # compile only
 - A failed upload is printed and `watch` keeps running. `Ctrl+C` stops everything.
 - In projects without a `tsconfig`, it uploads changed files in `FileCabinet` without compiling.
 
+### `nsk validate` and `nsk deploy`
+
+They compile the project (when there is a `tsconfig`; skip it with `--no-compile`) and call `suitecloud`:
+
+```bash
+nsk validate                 # suitecloud project:validate
+nsk validate --server        # validate on the server
+nsk deploy --dry-run         # preview, without changing the account
+nsk deploy                   # suitecloud project:deploy
+nsk deploy --asv WARNING     # continue even with account-specific values
+```
+
+`--asv` (`--accountspecificvalues`) only applies to account customization projects; `nsk` rejects it in SuiteApps.
+
+### `nsk account`
+
+```bash
+nsk account list             # configured auth IDs (→ marks the project's one)
+nsk account use sandbox      # switch the project.json defaultAuthId
+nsk account setup            # log in to an account (suitecloud account:setup)
+```
+
+`account use` checks that the auth ID exists before writing it to `project.json`, keeping the other keys.
+
+### Protected accounts
+
+List in `protectedAuthIds` (in `ns.config.json`) the auth IDs that must not be changed by mistake, such as production. When one of them is in `project.json`, `nsk deploy`, `nsk upload` and `nsk watch` ask for confirmation before changing the account; `--yes` skips the question. Without an interactive terminal (CI), they fail unless `--yes` is given. `nsk deploy --dry-run` and `nsk validate` never ask.
+
 ## Configuration
 
 `nsk` reads the project from:
@@ -146,7 +176,8 @@ Example `ns.config.json` (every field is optional):
   "tsconfig": "tsconfig.build.json",          // default: tsconfig.json
   "sourceDir": "src/Source",                  // overrides compilerOptions.rootDir
   "outDir": "src/FileCabinet/SuiteScripts",   // overrides compilerOptions.outDir
-  "bundler": "rollup"                         // runs "rollup -c" after a clean check (set by nsk init)
+  "bundler": "rollup",                        // runs "rollup -c" after a clean check (set by nsk init)
+  "protectedAuthIds": ["production"]          // ask before deploy/upload/watch on these auth IDs
 }
 ```
 
@@ -191,13 +222,6 @@ Built-in best practices:
 
 The snippets are the source of the templates: after changing the JSON, run `npm run sync:templates` to regenerate the `templates/` folder. CI fails if they are out of sync.
 
-## Roadmap
-
-| Command | Description |
-|---|---|
-| `nsk validate` / `nsk deploy` | Compile and run `project:validate` / `project:deploy` |
-| `nsk account` | List, switch and set up accounts (sandbox, production) |
-
 ## Development
 
 ```bash
@@ -212,8 +236,8 @@ Layout:
 
 ```
 src/
-  commands/          CLI commands (init, doctor, templates, generate, build, upload, watch)
-  core/              config, paths, suitecloud and tsc wrappers, watch upload queue
+  commands/          CLI commands (one file per command)
+  core/              config, paths, suitecloud/tsc/rollup wrappers, watch upload queue, init scaffold
 templates/           generated templates (javascript/, typescript/, sdf/, manifest.json)
 snippets/            VS Code snippets (source of the templates)
 scripts/             maintenance scripts

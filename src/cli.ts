@@ -1,6 +1,8 @@
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
+import { registerAccount } from './commands/account.js';
 import { registerBuild } from './commands/build.js';
+import { registerDeploy, registerValidate } from './commands/deploy.js';
 import { registerDoctor } from './commands/doctor.js';
 import { registerGenerate } from './commands/generate.js';
 import { registerInit } from './commands/init.js';
@@ -23,6 +25,9 @@ registerGenerate(program);
 registerBuild(program);
 registerUpload(program);
 registerWatch(program);
+registerValidate(program);
+registerDeploy(program);
+registerAccount(program);
 
 try {
   await program.parseAsync();

@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import type { Command } from 'commander';
 import { loadProject, type Project } from '../core/config.js';
+import { askInTerminal, type Confirm, guardProtectedAccount } from '../core/guard.js';
 import { resolveUploadTarget, type UploadTarget } from '../core/paths.js';
 import { SuiteCloud } from '../core/suitecloud.js';
 import { compileProject } from '../core/tsc.js';
@@ -10,6 +11,7 @@ import { NskError } from '../errors.js';
 export interface UploadOptions {
   dryRun: boolean;
   compile: boolean;
+  yes?: boolean;
 }
 
 export interface UploadDeps {
@@ -17,6 +19,7 @@ export interface UploadDeps {
   suitecloud: Pick<SuiteCloud, 'upload'>;
   compile: (project: Project) => Promise<void>;
   exists: (file: string) => boolean;
+  confirm: Confirm;
 }
 
 export function registerUpload(program: Command): void {
@@ -26,6 +29,7 @@ export function registerUpload(program: Command): void {
     .argument('[files...]', '.ts sources or files inside the FileCabinet folder')
     .option('--dry-run', 'show what would be uploaded, without compiling or uploading', false)
     .option('--no-compile', 'upload the existing .js without compiling first')
+    .option('-y, --yes', 'skip the confirmation for protected accounts', false)
     .action(async (files: string[], options: UploadOptions) => {
       const cwd = process.cwd();
       const project = loadProject(cwd);
@@ -34,6 +38,7 @@ export function registerUpload(program: Command): void {
         suitecloud: new SuiteCloud(project.root),
         compile: compileProject,
         exists: existsSync,
+        confirm: askInTerminal,
       });
       if (options.dryRun) {
         for (const target of targets) {
@@ -61,6 +66,8 @@ export async function runUpload(
   }
   const targets = [...byPath.values()];
   if (options.dryRun) return targets;
+  const count = targets.length === 1 ? '1 file' : `${targets.length} files`;
+  await guardProtectedAccount(project, `Upload ${count} to it`, options.yes ?? false, deps.confirm);
 
   if (options.compile && targets.some((target) => target.needsCompile)) {
     await deps.compile(project);

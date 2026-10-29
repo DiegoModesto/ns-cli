@@ -12,6 +12,8 @@ const project = {
     sourceDir: join(root, 'src/Source'),
     outDir: join(root, 'src/FileCabinet/SuiteScripts'),
   },
+  authId: 'sandbox',
+  config: { protectedAuthIds: ['production'] },
 } as Project;
 
 const defaults: UploadOptions = { dryRun: false, compile: true };
@@ -22,6 +24,7 @@ function fakeDeps(overrides: Partial<UploadDeps> = {}) {
     suitecloud: { upload: vi.fn(async () => {}) },
     compile: vi.fn(async () => {}),
     exists: vi.fn(() => true),
+    confirm: vi.fn(async () => false),
     ...overrides,
   } satisfies UploadDeps;
 }
@@ -74,6 +77,19 @@ describe('runUpload', () => {
       /Compiled file not found:\n {2}- src\/FileCabinet\/SuiteScripts\/b\.js$/,
     );
     expect(deps.suitecloud.upload).not.toHaveBeenCalled();
+  });
+
+  it('asks before uploading to a protected account, unless --yes', async () => {
+    const protectedProject = { ...project, authId: 'production' };
+    const deps = fakeDeps();
+
+    await expect(runUpload(['src/Source/a.ts'], protectedProject, defaults, deps)).rejects.toThrow(/protected account/);
+    expect(deps.confirm).toHaveBeenCalledWith('"production" is a protected account. Upload 1 file to it? (y/N) ');
+    expect(deps.compile).not.toHaveBeenCalled();
+    expect(deps.suitecloud.upload).not.toHaveBeenCalled();
+
+    await runUpload(['src/Source/a.ts'], protectedProject, { ...defaults, yes: true }, deps);
+    expect(deps.suitecloud.upload).toHaveBeenCalledOnce();
   });
 
   it('requires at least one file', async () => {

@@ -26,9 +26,11 @@ export interface InitDeps {
   cwd: string;
   suitecloud: Pick<SuiteCloud, 'createProject'>;
   install: (dir: string) => Promise<void>;
+  /** Version of the running nsk, pinned in the new project's devDependencies. */
+  nskVersion?: string;
 }
 
-export function registerInit(program: Command, t: Messages): void {
+export function registerInit(program: Command, t: Messages, version: string): void {
   program
     .command('init')
     .description(t.init.description)
@@ -46,6 +48,7 @@ export function registerInit(program: Command, t: Messages): void {
         cwd,
         suitecloud: new SuiteCloud(cwd),
         install: (folder) => installDependencies(folder),
+        nskVersion: version,
       });
       console.log(`\n✔ Created ${relative(cwd, dir) || '.'}\n\nNext steps:`);
       console.log(`  cd ${relative(cwd, dir)}`);
@@ -69,7 +72,7 @@ export async function runInit(name: string, options: InitOptions, deps: InitDeps
     suiteApp = { publisherId: options.publisherId, projectId: options.projectId };
   }
 
-  const scaffold: ScaffoldOptions = { name, suiteApp };
+  const scaffold: ScaffoldOptions = { name, suiteApp, nskVersion: deps.nskVersion };
   const dir = join(deps.cwd, projectFolderName(scaffold));
   assertEmptyFolder(dir, options.force);
 

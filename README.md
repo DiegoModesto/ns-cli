@@ -4,7 +4,7 @@
 
 CLI para projetos NetSuite SuiteCloud com foco em TypeScript. Funciona como uma camada sobre o [SuiteCloud CLI](https://www.npmjs.com/package/@oracle/suitecloud-cli) oficial: o `suitecloud` continua cuidando da autenticação e do deploy, e o `nsk` cuida do que hoje é manual — compilar o TypeScript, encontrar o `.js` certo no File Cabinet, gerar scripts tipados e trocar de conta.
 
-> **Status:** em desenvolvimento (`0.0.0`). Todos os comandos planejados para a `0.1.0` estão implementados; falta a validação em uma conta NetSuite antes da primeira publicação.
+> **Status:** `0.1.0`, primeira versão. Validado em sandbox: `init`, `generate`, `build`, `validate` e `deploy --dry-run`. `upload`, `watch`, `deploy` e `account` ainda não foram validados contra uma conta real — se algo falhar, abra uma [issue](https://github.com/DiegoModesto/ns-cli/issues).
 
 ## Requisitos
 
@@ -13,7 +13,14 @@ CLI para projetos NetSuite SuiteCloud com foco em TypeScript. Funciona como uma 
 
 ## Instalação
 
-Ainda não publicado no npm. Para usar a partir do código-fonte:
+```bash
+npm install -g @diegomodesto/ns
+nsk --version
+```
+
+Projetos criados pelo `nsk init` também recebem o `@diegomodesto/ns` nas `devDependencies`, então os scripts `npm run build`/`watch`/`deploy` funcionam sem a instalação global.
+
+Para usar a partir do código-fonte:
 
 ```bash
 git clone git@github.com:DiegoModesto/ns-cli.git
@@ -21,12 +28,6 @@ cd ns-cli
 npm install
 npm run build
 npm link        # disponibiliza o comando "nsk" globalmente
-```
-
-Depois da primeira release:
-
-```bash
-npm install -g @diegomodesto/ns
 ```
 
 ## Uso

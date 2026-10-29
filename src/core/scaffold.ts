@@ -8,6 +8,8 @@ export interface ScaffoldOptions {
   /** Project name (package.json name is derived from it). */
   name: string;
   suiteApp: { publisherId: string; projectId: string } | null;
+  /** Version of nsk itself, added as a devDependency so the npm scripts work without a global install. */
+  nskVersion?: string;
 }
 
 /** Versions verified together with the generated rollup config (TS 7 checks, rollup + esbuild emit AMD). */
@@ -37,7 +39,7 @@ export function scaffoldOutDir(options: ScaffoldOptions): string {
 export function scaffoldFiles(dir: string, options: ScaffoldOptions): GeneratedFile[] {
   const outDir = scaffoldOutDir(options);
   return [
-    { path: join(dir, 'package.json'), content: json(packageJson(options.name)) },
+    { path: join(dir, 'package.json'), content: json(packageJson(options.name, options.nskVersion)) },
     { path: join(dir, 'tsconfig.json'), content: json(tsconfig(outDir)) },
     { path: join(dir, 'ns.config.json'), content: json({ bundler: 'rollup' }) },
     { path: join(dir, 'rollup.config.mjs'), content: rollupConfig(outDir) },
@@ -72,7 +74,9 @@ export async function installDependencies(dir: string, runner: Runner = execaRun
   }
 }
 
-function packageJson(name: string) {
+function packageJson(name: string, nskVersion: string | undefined) {
+  // 0.0.0 is a build from source, which is not on npm.
+  const nsk = nskVersion && nskVersion !== '0.0.0' ? { '@diegomodesto/ns': `^${nskVersion}` } : {};
   return {
     name: name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-'),
     private: true,
@@ -83,7 +87,7 @@ function packageJson(name: string) {
       deploy: 'nsk deploy',
       typecheck: 'tsc -p tsconfig.json',
     },
-    devDependencies: DEV_DEPENDENCIES,
+    devDependencies: { ...nsk, ...DEV_DEPENDENCIES },
   };
 }
 

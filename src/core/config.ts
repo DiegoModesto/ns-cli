@@ -30,6 +30,11 @@ export interface TypeScriptSettings {
   outDir: string;
 }
 
+export interface SuiteAppInfo {
+  publisherId: string;
+  projectId: string;
+}
+
 export interface Project {
   root: string;
   /** Absolute path of ns.config.json, or null when running with defaults. */
@@ -40,6 +45,8 @@ export interface Project {
   fileCabinetDir: string;
   /** null for JavaScript-only projects (no tsconfig). */
   typescript: TypeScriptSettings | null;
+  /** Set for SuiteApp projects (manifest.xml with projecttype="SUITEAPP"); null for account customization. */
+  suiteApp: SuiteAppInfo | null;
   /** Default auth ID from project.json, set by `suitecloud account:setup`. */
   authId: string | null;
 }
@@ -75,6 +82,7 @@ export function loadProject(cwd: string = process.cwd()): Project {
     projectFolder,
     fileCabinetDir,
     typescript: readTypeScriptSettings(root, config),
+    suiteApp: readSuiteApp(projectFolder),
     authId: readAuthId(root),
   };
 }
@@ -113,6 +121,20 @@ function readProjectFolder(root: string): string {
   // An ESM config (`export default`) is loaded by require(esm) as a namespace object.
   const config = (loaded.default ?? loaded) as { defaultProjectFolder?: unknown };
   return typeof config.defaultProjectFolder === 'string' ? config.defaultProjectFolder : 'src';
+}
+
+function readSuiteApp(projectFolder: string): SuiteAppInfo | null {
+  const file = join(projectFolder, 'manifest.xml');
+  if (!existsSync(file)) return null;
+
+  const xml = readFileSync(file, 'utf8');
+  if (!/<manifest[^>]*projecttype\s*=\s*"SUITEAPP"/i.test(xml)) return null;
+  const publisherId = xml.match(/<publisherid>\s*([^<\s]+)\s*<\/publisherid>/)?.[1];
+  const projectId = xml.match(/<projectid>\s*([^<\s]+)\s*<\/projectid>/)?.[1];
+  if (!publisherId || !projectId) {
+    throw new NskError(`${file} is a SuiteApp manifest without <publisherid> and <projectid>.`);
+  }
+  return { publisherId, projectId };
 }
 
 function readAuthId(root: string): string | null {

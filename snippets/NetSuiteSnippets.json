@@ -804,7 +804,7 @@
 			"\t<notifyemails></notifyemails>",
 			"\t<notifyowner>T</notifyowner>",
 			"\t<notifyuser>F</notifyuser>",
-			"\t<scriptfile>[/SuiteScripts/${5:path/file.js}]</scriptfile>",
+			"\t<scriptfile>[${5:/SuiteScripts/path/file.js}]</scriptfile>",
 			"\t<scriptdeployments>",
 			"\t\t<scriptdeployment scriptid=\"customdeploy_${2:name}\">",
 			"\t\t\t<allemployees>F</allemployees>",

@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerDoctor } from './commands/doctor.js';
+import { registerGenerate } from './commands/generate.js';
 import { registerTemplates } from './commands/templates.js';
 import { registerUpload } from './commands/upload.js';
 import { registerWatch } from './commands/watch.js';
@@ -15,6 +16,7 @@ const program = new Command()
 
 registerDoctor(program);
 registerTemplates(program);
+registerGenerate(program);
 registerUpload(program);
 registerWatch(program);
 

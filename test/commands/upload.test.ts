@@ -1,9 +1,9 @@
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { runUpload, type UploadDeps, type UploadOptions } from '../../src/commands/upload.js';
 import type { Project } from '../../src/core/config.js';
 
-const root = join('/work', 'project');
+const root = resolve('/work/project');
 const project = {
   root,
   fileCabinetDir: join(root, 'src/FileCabinet'),

@@ -4,7 +4,7 @@
 
 CLI para projetos NetSuite SuiteCloud com foco em TypeScript. Funciona como uma camada sobre o [SuiteCloud CLI](https://www.npmjs.com/package/@oracle/suitecloud-cli) oficial: o `suitecloud` continua cuidando da autenticação e do deploy, e o `nsk` cuida do que hoje é manual — compilar o TypeScript, encontrar o `.js` certo no File Cabinet, gerar scripts tipados e trocar de conta.
 
-> **Status:** em desenvolvimento (`0.0.0`). Hoje o CLI traz os templates, os snippets, o `nsk doctor`, o `nsk generate`, o `nsk upload` e o `nsk watch`; os demais comandos de projeto estão no [roadmap](#roadmap).
+> **Status:** em desenvolvimento (`0.0.0`). Hoje o CLI traz os templates, os snippets, `nsk init`, `nsk doctor`, `nsk generate`, `nsk build`, `nsk upload` e `nsk watch`; os demais comandos de projeto estão no [roadmap](#roadmap).
 
 ## Requisitos
 
@@ -33,6 +33,7 @@ npm install -g @diegomodesto/ns
 
 ```bash
 nsk --version
+nsk init meu-projeto                             # cria um projeto SDF pronto para TypeScript
 nsk doctor                                       # verifica o ambiente e mostra como o nsk enxerga o projeto
 nsk templates list                               # lista os templates disponíveis
 nsk templates show user-event-script             # imprime o template TypeScript
@@ -58,6 +59,23 @@ Rode dentro de um projeto SuiteCloud (em qualquer subpasta):
 ```
 
 Termina com código `1` se algo estiver faltando (CLI não instalado, `ns.config.json` inválido, conta não configurada).
+
+### `nsk init`
+
+Cria um projeto SuiteCloud já pronto para TypeScript:
+
+```bash
+nsk init meu-projeto                     # account customization project
+nsk init meu-app --suiteapp --publisher-id com.acme --project-id myapp [--project-version 1.0.0]
+```
+
+Roda o `suitecloud project:create` e adiciona `package.json`, `tsconfig.json`, `ns.config.json`, `rollup.config.mjs` e `src/Source/`, depois executa `npm install` (pule com `--no-install`). A pasta criada é `<nome>` ou, em SuiteApps, `<publisherid>.<projectid>`. Uma pasta que não está vazia só é usada com `--force`.
+
+**TypeScript 7 + rollup:** o TypeScript 7 não gera mais AMD (`define`), que o SuiteScript exige. Nos projetos criados pelo `nsk init`, o `tsc` só faz a checagem de tipos (`noEmit`) e o rollup gera um `.js` AMD por módulo, mantendo a estrutura de pastas e o cabeçalho `@NApiVersion`/`@NScriptType`. O `nsk build`, o `nsk upload` e o `nsk watch` rodam os dois em sequência, e o rollup só roda quando a checagem passa sem erros. Importe os módulos do NetSuite como namespace (`import * as record from 'N/record'`): eles não têm export default, e o build recusa `import record from 'N/record'`.
+
+### `nsk build`
+
+Compila o projeto: `tsc -p <tsconfig>` e, se o `ns.config.json` define `"bundler": "rollup"`, `rollup -c` em seguida.
 
 ### `nsk generate`
 
@@ -127,7 +145,8 @@ Exemplo de `ns.config.json` (todos os campos são opcionais):
 {
   "tsconfig": "tsconfig.build.json",          // padrão: tsconfig.json
   "sourceDir": "src/Source",                  // sobrescreve compilerOptions.rootDir
-  "outDir": "src/FileCabinet/SuiteScripts"    // sobrescreve compilerOptions.outDir
+  "outDir": "src/FileCabinet/SuiteScripts",   // sobrescreve compilerOptions.outDir
+  "bundler": "rollup"                         // roda "rollup -c" depois de uma checagem sem erros (criado pelo nsk init)
 }
 ```
 
@@ -176,7 +195,6 @@ Os snippets são a fonte dos templates: ao alterar o JSON, rode `npm run sync:te
 
 | Comando | Descrição |
 |---|---|
-| `nsk init` | Cria um projeto SDF já configurado para TypeScript (`tsconfig`, `@hitc/netsuite-types`, `src/Source`, `ns.config.json`) |
 | `nsk validate` / `nsk deploy` | Compila e executa `project:validate` / `project:deploy` |
 | `nsk account` | Lista, troca e configura contas (sandbox, produção) |
 
@@ -194,7 +212,7 @@ Estrutura:
 
 ```
 src/
-  commands/          comandos do CLI (doctor, templates, generate, upload, watch)
+  commands/          comandos do CLI (init, doctor, templates, generate, build, upload, watch)
   core/              config, caminhos, wrappers do suitecloud e do tsc, fila de upload do watch
 templates/           templates gerados (javascript/, typescript/, sdf/, manifest.json)
 snippets/            snippets do VS Code (fonte dos templates)

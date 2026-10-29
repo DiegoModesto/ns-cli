@@ -17,6 +17,11 @@ const configSchema = z
     sourceDir: z.string().optional(),
     /** Overrides compilerOptions.outDir from the tsconfig. */
     outDir: z.string().optional(),
+    /**
+     * Emits the AMD files with `rollup -c` after a clean `tsc` check (tsconfig with noEmit). Set by `nsk init`,
+     * because TypeScript 7 cannot emit AMD.
+     */
+    bundler: z.enum(['rollup']).optional(),
   })
   .strict();
 

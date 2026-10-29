@@ -31,6 +31,11 @@ describe('compileProject', () => {
     await expect(compileProject(project, fakeRunner(undefined))).rejects.toThrow(/tsc\) not found/);
   });
 
+  it('reports an interrupted compilation instead of a missing compiler', async () => {
+    const runner = vi.fn<Runner>(async () => ({ exitCode: undefined, signal: 'SIGTERM', stdout: '', stderr: '' }));
+    await expect(compileProject(project, runner)).rejects.toThrow('TypeScript compilation was interrupted (SIGTERM).');
+  });
+
   it('refuses JavaScript-only projects', async () => {
     await expect(compileProject({ ...project, typescript: null }, fakeRunner(0))).rejects.toThrow(/no tsconfig/);
   });

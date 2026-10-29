@@ -58,6 +58,11 @@ describe('SuiteCloud', () => {
     await expect(promise).rejects.toMatchObject({ hint: expect.stringContaining('@oracle/suitecloud-cli') });
   });
 
+  it('reports an interrupted command instead of a missing CLI', async () => {
+    const runner = fakeRunner({ exitCode: undefined, signal: 'SIGINT' });
+    await expect(new SuiteCloud('/p', runner).deploy()).rejects.toThrow('suitecloud project:deploy was interrupted (SIGINT).');
+  });
+
   it('reports failures with the exit code and captured output', async () => {
     const runner = fakeRunner({ exitCode: 2, stderr: 'Invalid auth ID' });
     await expect(new SuiteCloud('/p', runner).listAuthIds()).rejects.toThrow(/exit code 2\.\nInvalid auth ID/);

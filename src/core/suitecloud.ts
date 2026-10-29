@@ -1,5 +1,5 @@
 import { NskError } from '../errors.js';
-import { execaRunner, type ExecResult, type Runner } from './exec.js';
+import { execaRunner, type ExecResult, notStarted, type Runner } from './exec.js';
 
 const NOT_INSTALLED_HINT = 'Install it with "npm install -g @oracle/suitecloud-cli".';
 
@@ -62,8 +62,11 @@ export class SuiteCloud {
 
   private async exec(args: string[], stdio: 'inherit' | 'pipe'): Promise<ExecResult> {
     const result = await this.runner('suitecloud', args, { cwd: this.cwd, stdio });
-    if (result.exitCode === undefined) {
+    if (notStarted(result)) {
       throw new NskError('SuiteCloud CLI not found.', NOT_INSTALLED_HINT);
+    }
+    if (result.signal) {
+      throw new NskError(`suitecloud ${args[0]} was interrupted (${result.signal}).`);
     }
     if (result.exitCode !== 0) {
       const details = stdio === 'pipe' ? `\n${(result.stderr || result.stdout).trim()}` : '';

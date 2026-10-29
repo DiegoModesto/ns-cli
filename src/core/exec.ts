@@ -7,10 +7,17 @@ export interface ExecOptions {
 }
 
 export interface ExecResult {
-  /** `undefined` when the command could not be started (e.g. not installed). */
+  /** `undefined` when the command could not be started (e.g. not installed) or was killed by `signal`. */
   exitCode: number | undefined;
+  /** Signal that terminated the process (e.g. `SIGINT` on Ctrl+C); absent when it exited on its own. */
+  signal?: string;
   stdout: string;
   stderr: string;
+}
+
+/** True when the command never ran, as opposed to running and failing or being interrupted. */
+export function notStarted(result: ExecResult): boolean {
+  return result.exitCode === undefined && !result.signal;
 }
 
 export type Runner = (command: string, args: string[], options: ExecOptions) => Promise<ExecResult>;
@@ -26,6 +33,7 @@ export const execaRunner: Runner = async (command, args, { cwd, stdio }) => {
   });
   return {
     exitCode: result.exitCode,
+    signal: result.signal,
     stdout: typeof result.stdout === 'string' ? result.stdout : '',
     stderr: typeof result.stderr === 'string' ? result.stderr : '',
   };

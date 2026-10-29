@@ -65,6 +65,25 @@ describe('loadProject', () => {
     expect(loadProject(root).fileCabinetDir).toBe(join(root, 'sdf/FileCabinet'));
   });
 
+  it('reads an ESM suitecloud.config.js', () => {
+    write('package.json', '{ "type": "module" }');
+    write('suitecloud.config.js', 'export default { defaultProjectFolder: "sdf" };');
+    expect(loadProject(root).fileCabinetDir).toBe(join(root, 'sdf/FileCabinet'));
+  });
+
+  it('reports a broken suitecloud.config.js', () => {
+    write('suitecloud.config.js', 'module.exports = {');
+    expect(() => loadProject(root)).toThrow(NskError);
+    expect(() => loadProject(root)).toThrow(/Could not load suitecloud\.config\.js/);
+  });
+
+  it('rejects malformed project.json', () => {
+    write('suitecloud.config.js', SUITECLOUD_CONFIG);
+    write('project.json', '{bad');
+    expect(() => loadProject(root)).toThrow(NskError);
+    expect(() => loadProject(root)).toThrow(/project\.json is not valid JSON/);
+  });
+
   it('treats projects without tsconfig as JavaScript only', () => {
     write('suitecloud.config.js', SUITECLOUD_CONFIG);
     const project = loadProject(root);

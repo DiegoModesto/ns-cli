@@ -77,4 +77,10 @@ describe.each(cases)('paths ($os)', ({ p, root }) => {
     expect(isInside(project.fileCabinetDir, project.fileCabinetDir, p)).toBe(false);
     expect(isInside(project.fileCabinetDir, project.fileCabinetDir + 'Old', p)).toBe(false);
   });
+
+  it('isInside accepts children whose name starts with ".."', () => {
+    expect(isInside(project.fileCabinetDir, p.join(project.fileCabinetDir, '..x', 'a.js'), p)).toBe(true);
+    expect(isInside(project.fileCabinetDir, p.join(project.fileCabinetDir, '..'), p)).toBe(false);
+    expect(isInside(project.fileCabinetDir, p.join(project.fileCabinetDir, '..', 'x', 'a.js'), p)).toBe(false);
+  });
 });

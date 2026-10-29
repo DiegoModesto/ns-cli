@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { NskError } from '../src/errors.js';
 import { findTemplate, loadTemplates, readTemplate, renderTemplate, templatesDir } from '../src/templates.js';
 
 const templates = loadTemplates();
@@ -31,6 +32,14 @@ describe('templates manifest', () => {
 describe('javascript templates', () => {
   it.each(templates.filter((template) => template.files.javascript))('$id is valid JavaScript', (template) => {
     execFileSync(process.execPath, ['--check', join(templatesDir, template.files.javascript!)]);
+  });
+});
+
+describe('readTemplate', () => {
+  it('reports a missing language as a NskError', () => {
+    const template = { id: 'only-ts', name: 'Only TS', kind: 'module' as const, files: { typescript: 'x.ts' } };
+    expect(() => readTemplate(template, 'javascript')).toThrow(NskError);
+    expect(() => readTemplate(template, 'javascript')).toThrow(/not available in javascript/);
   });
 });
 

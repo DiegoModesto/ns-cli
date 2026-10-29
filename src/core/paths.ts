@@ -18,7 +18,9 @@ export interface UploadTarget {
 
 export function isInside(parent: string, child: string, p: PathApi = path): boolean {
   const relative = p.relative(parent, child);
-  return relative !== '' && !relative.startsWith('..') && !p.isAbsolute(relative);
+  // Compare against `..` + sep, not a bare `..` prefix: a folder named `..x` is still inside.
+  const escapes = relative === '..' || relative.startsWith('..' + p.sep);
+  return relative !== '' && !escapes && !p.isAbsolute(relative);
 }
 
 /** Converts a file inside the FileCabinet folder to its File Cabinet path ("/SuiteScripts/..."). */

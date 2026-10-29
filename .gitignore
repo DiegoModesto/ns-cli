@@ -4,6 +4,10 @@ coverage/
 *.log
 .DS_Store
 
+# Personal secrets (npm token etc.)
+.env
+.env.*
+
 # Local AI agent instructions (not published)
 AGENTS.md
 CLAUDE.md

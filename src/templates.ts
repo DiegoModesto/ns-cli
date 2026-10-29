@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { NskError } from './errors.js';
 
 export type TemplateLanguage = 'javascript' | 'typescript' | 'xml';
 
@@ -27,7 +28,8 @@ export function findTemplate(id: string): Template | undefined {
 export function readTemplate(template: Template, language: TemplateLanguage): string {
   const file = template.files[language];
   if (!file) {
-    throw new Error(`Template "${template.id}" is not available in ${language}.`);
+    const available = Object.keys(template.files).join(', ');
+    throw new NskError(`Template "${template.id}" is not available in ${language}.`, `Available: ${available}.`);
   }
   return readFileSync(join(templatesDir, file), 'utf8');
 }

@@ -104,15 +104,31 @@ function readProjectFolder(root: string): string {
   const file = join(root, SUITECLOUD_CONFIG_FILE);
   if (!existsSync(file)) return 'src';
 
-  const suitecloudConfig = createRequire(file)(file) as { defaultProjectFolder?: unknown };
-  return typeof suitecloudConfig.defaultProjectFolder === 'string' ? suitecloudConfig.defaultProjectFolder : 'src';
+  let loaded: { default?: unknown; defaultProjectFolder?: unknown };
+  try {
+    loaded = createRequire(file)(file);
+  } catch (error) {
+    throw new NskError(`Could not load ${SUITECLOUD_CONFIG_FILE}: ${(error as Error).message}`);
+  }
+  // An ESM config (`export default`) is loaded by require(esm) as a namespace object.
+  const config = (loaded.default ?? loaded) as { defaultProjectFolder?: unknown };
+  return typeof config.defaultProjectFolder === 'string' ? config.defaultProjectFolder : 'src';
 }
 
 function readAuthId(root: string): string | null {
   const file = join(root, 'project.json');
   if (!existsSync(file)) return null;
 
-  const { defaultAuthId } = parseJsonc<{ defaultAuthId?: unknown }>(readFileSync(file, 'utf8'));
+  let json: { defaultAuthId?: unknown };
+  try {
+    json = parseJsonc(readFileSync(file, 'utf8'));
+  } catch (error) {
+    throw new NskError(
+      `project.json is not valid JSON: ${(error as Error).message}`,
+      'Fix or delete it and run "suitecloud account:setup" in the project folder.',
+    );
+  }
+  const { defaultAuthId } = json;
   return typeof defaultAuthId === 'string' && defaultAuthId ? defaultAuthId : null;
 }
 

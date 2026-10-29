@@ -1,6 +1,8 @@
 import { createRequire } from 'node:module';
-import { Command, Option } from 'commander';
-import { findTemplate, loadTemplates, readTemplate, type TemplateLanguage } from './templates.js';
+import { Command } from 'commander';
+import { registerDoctor } from './commands/doctor.js';
+import { registerTemplates } from './commands/templates.js';
+import { NskError } from './errors.js';
 
 const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
 
@@ -9,34 +11,14 @@ const program = new Command()
   .description('TypeScript-first CLI for NetSuite SuiteCloud projects')
   .version(version);
 
-const templates = program.command('templates').description('Browse the built-in SuiteScript templates');
+registerDoctor(program);
+registerTemplates(program);
 
-templates
-  .command('list')
-  .description('List available templates')
-  .action(() => {
-    for (const template of loadTemplates()) {
-      const languages = Object.keys(template.files).join(', ');
-      console.log(`${template.id.padEnd(28)} ${(template.scriptType ?? template.kind).padEnd(26)} ${languages}`);
-    }
-  });
-
-templates
-  .command('show')
-  .description('Print a template')
-  .argument('<id>', 'template id (see "nsk templates list")')
-  .addOption(
-    new Option('-l, --language <language>', 'template language')
-      .choices(['typescript', 'javascript', 'xml'])
-      .default('typescript'),
-  )
-  .action((id: string, options: { language: TemplateLanguage }) => {
-    const template = findTemplate(id);
-    if (!template) {
-      return program.error(`Unknown template "${id}". Run "nsk templates list" to see the available ones.`);
-    }
-    const language = template.kind === 'sdf-object' ? 'xml' : options.language;
-    process.stdout.write(readTemplate(template, language));
-  });
-
-await program.parseAsync();
+try {
+  await program.parseAsync();
+} catch (error) {
+  if (!(error instanceof NskError)) throw error;
+  console.error(`✖ ${error.message}`);
+  if (error.hint) console.error(`  ${error.hint}`);
+  process.exitCode = 1;
+}

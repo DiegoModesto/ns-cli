@@ -4,7 +4,7 @@
 
 CLI para projetos NetSuite SuiteCloud com foco em TypeScript. Funciona como uma camada sobre o [SuiteCloud CLI](https://www.npmjs.com/package/@oracle/suitecloud-cli) oficial: o `suitecloud` continua cuidando da autenticação e do deploy, e o `nsk` cuida do que hoje é manual — compilar o TypeScript, encontrar o `.js` certo no File Cabinet, gerar scripts tipados e trocar de conta.
 
-> **Status:** em desenvolvimento (`0.0.0`). Hoje o CLI já traz os templates e os snippets; os comandos de projeto estão no [roadmap](#roadmap).
+> **Status:** em desenvolvimento (`0.0.0`). Hoje o CLI traz os templates, os snippets e o `nsk doctor`; os demais comandos de projeto estão no [roadmap](#roadmap).
 
 ## Requisitos
 
@@ -33,11 +33,51 @@ npm install -g @diegomodesto/ns
 
 ```bash
 nsk --version
+nsk doctor                                       # verifica o ambiente e mostra como o nsk enxerga o projeto
 nsk templates list                               # lista os templates disponíveis
 nsk templates show user-event-script             # imprime o template TypeScript
 nsk templates show restlet --language javascript # versão JavaScript
 nsk templates show script-object                 # objeto SDF (XML) com deployment
 ```
+
+### `nsk doctor`
+
+Rode dentro de um projeto SuiteCloud (em qualquer subpasta):
+
+```text
+✔ Node.js          v22.18.0
+✔ SuiteCloud CLI   3.0.2
+✔ Project root     /Users/voce/Repos/meu-projeto
+✔ Config           defaults (no ns.config.json)
+✔ FileCabinet      src/FileCabinet
+✔ TypeScript       src/Source → src/FileCabinet/SuiteScripts (tsconfig.json)
+✔ Auth ID          sandbox
+```
+
+Termina com código `1` se algo estiver faltando (CLI não instalado, `ns.config.json` inválido, conta não configurada).
+
+## Configuração
+
+O `nsk` lê o projeto a partir de:
+
+| Fonte | O que é usado |
+|---|---|
+| `suitecloud.config.js` | `defaultProjectFolder` (padrão `src`) → a pasta `FileCabinet` fica dentro dele |
+| `tsconfig.json` | `compilerOptions.rootDir` (fontes `.ts`) e `outDir` (`.js` compilado, dentro do `FileCabinet`); segue `extends` relativos |
+| `project.json` | `defaultAuthId`, criado pelo `suitecloud account:setup` |
+| `ns.config.json` | Opcional, para sobrescrever os valores acima |
+
+Exemplo de `ns.config.json` (todos os campos são opcionais):
+
+```jsonc
+{
+  "tsconfig": "tsconfig.build.json",          // padrão: tsconfig.json
+  "sourceDir": "src/Source",                  // sobrescreve compilerOptions.rootDir
+  "outDir": "src/FileCabinet/SuiteScripts"    // sobrescreve compilerOptions.outDir
+}
+```
+
+Com essa configuração, `src/Source/App/ue_sales_order.ts` é compilado para `src/FileCabinet/SuiteScripts/App/ue_sales_order.js` e enviado como `/SuiteScripts/App/ue_sales_order.js`. Projetos sem `tsconfig` funcionam como JavaScript puro.
 
 ## Templates
 
@@ -102,7 +142,9 @@ npm run sync:templates   # regenera templates/ a partir dos snippets
 Estrutura:
 
 ```
-src/                 código do CLI
+src/
+  commands/          comandos do CLI (doctor, templates)
+  core/              config, caminhos, wrapper do suitecloud e do tsc
 templates/           templates gerados (javascript/, typescript/, sdf/, manifest.json)
 snippets/            snippets do VS Code (fonte dos templates)
 scripts/             scripts de manutenção

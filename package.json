@@ -43,7 +43,9 @@
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
-    "commander": "^15.0.0"
+    "commander": "^15.0.0",
+    "execa": "^10.2.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@hitc/netsuite-types": "^2026.2.4",

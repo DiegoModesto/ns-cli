@@ -3,3 +3,8 @@ dist/
 coverage/
 *.log
 .DS_Store
+
+# Local AI agent instructions (not published)
+AGENTS.md
+CLAUDE.md
+.ai/

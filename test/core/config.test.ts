@@ -84,6 +84,21 @@ describe('loadProject', () => {
     expect(() => loadProject(root)).toThrow(/project\.json is not valid JSON/);
   });
 
+  it('detects SuiteApp projects from manifest.xml', () => {
+    write('suitecloud.config.js', SUITECLOUD_CONFIG);
+    write(
+      'src/manifest.xml',
+      '<manifest projecttype="SUITEAPP">\n  <publisherid>com.acme</publisherid>\n  <projectid>myapp</projectid>\n</manifest>',
+    );
+    expect(loadProject(root).suiteApp).toEqual({ publisherId: 'com.acme', projectId: 'myapp' });
+  });
+
+  it('treats account customization projects as not SuiteApp', () => {
+    write('suitecloud.config.js', SUITECLOUD_CONFIG);
+    write('src/manifest.xml', '<manifest projecttype="ACCOUNTCUSTOMIZATION">\n  <projectname>demo</projectname>\n</manifest>');
+    expect(loadProject(root).suiteApp).toBeNull();
+  });
+
   it('treats projects without tsconfig as JavaScript only', () => {
     write('suitecloud.config.js', SUITECLOUD_CONFIG);
     const project = loadProject(root);

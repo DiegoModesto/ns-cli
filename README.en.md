@@ -4,7 +4,7 @@
 
 A TypeScript-first CLI for NetSuite SuiteCloud projects. It is a layer on top of the official [SuiteCloud CLI](https://www.npmjs.com/package/@oracle/suitecloud-cli): `suitecloud` still handles authentication and deployment, while `nsk` handles what is manual today — compiling TypeScript, finding the right `.js` in the File Cabinet, generating typed scripts and switching accounts.
 
-> **Status:** in development (`0.0.0`). The CLI currently ships the templates, the snippets, `nsk doctor`, `nsk upload` and `nsk watch`; the other project commands are on the [roadmap](#roadmap).
+> **Status:** in development (`0.0.0`). The CLI currently ships the templates, the snippets, `nsk doctor`, `nsk generate`, `nsk upload` and `nsk watch`; the other project commands are on the [roadmap](#roadmap).
 
 ## Requirements
 
@@ -38,6 +38,7 @@ nsk templates list                               # list the available templates
 nsk templates show user-event-script             # print the TypeScript template
 nsk templates show restlet --language javascript # JavaScript version
 nsk templates show script-object                 # SDF object (XML) with deployment
+nsk generate user-event-script ue_sales_order    # create src/Source/ue_sales_order.ts from the template
 nsk upload src/Source/App/ue_sales_order.ts      # compile and upload the matching .js
 nsk watch                                        # compile and upload on every save
 ```
@@ -57,6 +58,27 @@ Run it inside a SuiteCloud project (from any subfolder):
 ```
 
 It exits with code `1` when something is missing (CLI not installed, invalid `ns.config.json`, account not set up).
+
+### `nsk generate`
+
+Creates a script from the [templates](#templates) (alias `nsk g`):
+
+```bash
+nsk generate user-event-script ue_sales_order --dir App/_EntryPoints
+nsk generate restlet rl_orders --language javascript
+nsk generate user-event-script ue_sales_order --dir App/_EntryPoints --object --record-type SALESORDER
+```
+
+| Option | Description |
+|---|---|
+| `-l, --language` | `typescript` (default when the project has a `tsconfig`) or `javascript` |
+| `-d, --dir` | Subfolder inside the scripts folder |
+| `--object` | Also generate `Objects/customscript_<id>.xml` with its deployment, pointing at the `.js` in the File Cabinet |
+| `--script-id` | Id after `customscript_` (default: the name in snake_case) |
+| `--record-type` | Deployment record, e.g. `SALESORDER` (required with `--object`) |
+| `--force` | Overwrite existing files (by default nothing is overwritten) |
+
+Destination: TypeScript goes to the tsconfig `rootDir`; JavaScript goes to `FileCabinet/SuiteScripts` (in SuiteApps, `FileCabinet/SuiteApps/<publisherid>.<projectid>`). For now `--object` supports Client Script and User Event Script, the types the XML template covers.
 
 ### `nsk upload`
 
@@ -132,7 +154,7 @@ All of them use `@NApiVersion 2.1` and `@NModuleScope SameAccount`. The TypeScri
 | `sdf-installation-script` | `SDFInstallationScript` | JS, TS |
 | `script-object` | SDF object (Client/User Event + deployment) | XML |
 
-The `script-object` template uses the `{{scriptType}}`, `{{scriptId}}`, `{{description}}`, `{{name}}`, `{{scriptFile}}`, `{{logLevel}}`, `{{recordType}}` and `{{status}}` markers, which `nsk generate` will fill in.
+The `script-object` template uses the `{{scriptType}}`, `{{scriptId}}`, `{{description}}`, `{{name}}`, `{{scriptFile}}`, `{{logLevel}}`, `{{recordType}}` and `{{status}}` markers, filled in by `nsk generate --object` (`{{scriptFile}}` is the full File Cabinet path, e.g. `/SuiteScripts/App/ue.js`).
 
 Built-in best practices:
 
@@ -155,7 +177,6 @@ The snippets are the source of the templates: after changing the JSON, run `npm 
 | Command | Description |
 |---|---|
 | `nsk init` | Create an SDF project already set up for TypeScript (`tsconfig`, `@hitc/netsuite-types`, `src/Source`, `ns.config.json`) |
-| `nsk generate <type> <name>` | Generate a script from the templates; with `--object`, also generate the SDF XML with its deployment |
 | `nsk validate` / `nsk deploy` | Compile and run `project:validate` / `project:deploy` |
 | `nsk account` | List, switch and set up accounts (sandbox, production) |
 
@@ -173,7 +194,7 @@ Layout:
 
 ```
 src/
-  commands/          CLI commands (doctor, templates, upload, watch)
+  commands/          CLI commands (doctor, templates, generate, upload, watch)
   core/              config, paths, suitecloud and tsc wrappers, watch upload queue
 templates/           generated templates (javascript/, typescript/, sdf/, manifest.json)
 snippets/            VS Code snippets (source of the templates)

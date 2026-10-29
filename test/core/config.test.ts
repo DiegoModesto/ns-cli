@@ -138,6 +138,13 @@ describe('loadProject', () => {
     expect(() => loadProject(root)).toThrow(/compilerOptions\.rootDir/);
   });
 
+  it('accepts rollup as bundler and nothing else', () => {
+    write('ns.config.json', '{ "bundler": "rollup" }');
+    expect(loadProject(root).config.bundler).toBe('rollup');
+    write('ns.config.json', '{ "bundler": "webpack" }');
+    expect(() => loadProject(root)).toThrow(/bundler/);
+  });
+
   it('rejects unknown keys in ns.config.json', () => {
     write('ns.config.json', '{ "srcDir": "src" }');
     expect(() => loadProject(root)).toThrow(/Invalid ns\.config\.json/);

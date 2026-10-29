@@ -68,3 +68,35 @@ describe('SuiteCloud', () => {
     await expect(new SuiteCloud('/p', runner).listAuthIds()).rejects.toThrow(/exit code 2\.\nInvalid auth ID/);
   });
 });
+
+describe('SuiteCloud.createProject', () => {
+  it('builds account customization and SuiteApp arguments', async () => {
+    const runner = fakeRunner();
+    const suitecloud = new SuiteCloud('/work', runner);
+
+    await suitecloud.createProject({ name: 'demo', suiteApp: null });
+    await suitecloud.createProject({
+      name: 'app',
+      suiteApp: { publisherId: 'com.acme', projectId: 'myapp', projectVersion: '1.0.0' },
+      overwrite: true,
+    });
+
+    expect(runner.mock.calls.map(([, args]) => args)).toEqual([
+      ['project:create', '--type', 'ACCOUNTCUSTOMIZATION', '--projectname', 'demo'],
+      [
+        'project:create',
+        '--type',
+        'SUITEAPP',
+        '--projectname',
+        'app',
+        '--publisherid',
+        'com.acme',
+        '--projectid',
+        'myapp',
+        '--projectversion',
+        '1.0.0',
+        '--overwrite',
+      ],
+    ]);
+  });
+});

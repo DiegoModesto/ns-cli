@@ -1,7 +1,9 @@
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
+import { registerBuild } from './commands/build.js';
 import { registerDoctor } from './commands/doctor.js';
 import { registerGenerate } from './commands/generate.js';
+import { registerInit } from './commands/init.js';
 import { registerTemplates } from './commands/templates.js';
 import { registerUpload } from './commands/upload.js';
 import { registerWatch } from './commands/watch.js';
@@ -14,9 +16,11 @@ const program = new Command()
   .description('TypeScript-first CLI for NetSuite SuiteCloud projects')
   .version(version);
 
+registerInit(program);
 registerDoctor(program);
 registerTemplates(program);
 registerGenerate(program);
+registerBuild(program);
 registerUpload(program);
 registerWatch(program);
 

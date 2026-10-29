@@ -4,7 +4,7 @@
 
 A TypeScript-first CLI for NetSuite SuiteCloud projects. It is a layer on top of the official [SuiteCloud CLI](https://www.npmjs.com/package/@oracle/suitecloud-cli): `suitecloud` still handles authentication and deployment, while `nsk` handles what is manual today — compiling TypeScript, finding the right `.js` in the File Cabinet, generating typed scripts and switching accounts.
 
-> **Status:** in development (`0.0.0`). The CLI currently ships the templates, the snippets, `nsk doctor`, `nsk generate`, `nsk upload` and `nsk watch`; the other project commands are on the [roadmap](#roadmap).
+> **Status:** in development (`0.0.0`). The CLI currently ships the templates, the snippets, `nsk init`, `nsk doctor`, `nsk generate`, `nsk build`, `nsk upload` and `nsk watch`; the other project commands are on the [roadmap](#roadmap).
 
 ## Requirements
 
@@ -33,6 +33,7 @@ npm install -g @diegomodesto/ns
 
 ```bash
 nsk --version
+nsk init my-project                              # create an SDF project ready for TypeScript
 nsk doctor                                       # check the environment and show how nsk sees the project
 nsk templates list                               # list the available templates
 nsk templates show user-event-script             # print the TypeScript template
@@ -58,6 +59,23 @@ Run it inside a SuiteCloud project (from any subfolder):
 ```
 
 It exits with code `1` when something is missing (CLI not installed, invalid `ns.config.json`, account not set up).
+
+### `nsk init`
+
+Creates a SuiteCloud project ready for TypeScript:
+
+```bash
+nsk init my-project                      # account customization project
+nsk init my-app --suiteapp --publisher-id com.acme --project-id myapp [--project-version 1.0.0]
+```
+
+It runs `suitecloud project:create` and adds `package.json`, `tsconfig.json`, `ns.config.json`, `rollup.config.mjs` and `src/Source/`, then runs `npm install` (skip it with `--no-install`). The folder is `<name>` or, for SuiteApps, `<publisherid>.<projectid>`. A folder that is not empty is only used with `--force`.
+
+**TypeScript 7 + rollup:** TypeScript 7 no longer emits AMD (`define`), which SuiteScript requires. In projects created by `nsk init`, `tsc` only type-checks (`noEmit`) and rollup emits one AMD `.js` per module, keeping the folder structure and the `@NApiVersion`/`@NScriptType` header. `nsk build`, `nsk upload` and `nsk watch` run both in sequence, and rollup only runs when the check has no errors. Import NetSuite modules as namespaces (`import * as record from 'N/record'`): they have no default export, and the build rejects `import record from 'N/record'`.
+
+### `nsk build`
+
+Compiles the project: `tsc -p <tsconfig>` and, when `ns.config.json` sets `"bundler": "rollup"`, `rollup -c` afterwards.
 
 ### `nsk generate`
 
@@ -127,7 +145,8 @@ Example `ns.config.json` (every field is optional):
 {
   "tsconfig": "tsconfig.build.json",          // default: tsconfig.json
   "sourceDir": "src/Source",                  // overrides compilerOptions.rootDir
-  "outDir": "src/FileCabinet/SuiteScripts"    // overrides compilerOptions.outDir
+  "outDir": "src/FileCabinet/SuiteScripts",   // overrides compilerOptions.outDir
+  "bundler": "rollup"                         // runs "rollup -c" after a clean check (set by nsk init)
 }
 ```
 
@@ -176,7 +195,6 @@ The snippets are the source of the templates: after changing the JSON, run `npm 
 
 | Command | Description |
 |---|---|
-| `nsk init` | Create an SDF project already set up for TypeScript (`tsconfig`, `@hitc/netsuite-types`, `src/Source`, `ns.config.json`) |
 | `nsk validate` / `nsk deploy` | Compile and run `project:validate` / `project:deploy` |
 | `nsk account` | List, switch and set up accounts (sandbox, production) |
 
@@ -194,7 +212,7 @@ Layout:
 
 ```
 src/
-  commands/          CLI commands (doctor, templates, generate, upload, watch)
+  commands/          CLI commands (init, doctor, templates, generate, build, upload, watch)
   core/              config, paths, suitecloud and tsc wrappers, watch upload queue
 templates/           generated templates (javascript/, typescript/, sdf/, manifest.json)
 snippets/            VS Code snippets (source of the templates)

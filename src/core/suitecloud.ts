@@ -5,6 +5,13 @@ const NOT_INSTALLED_HINT = 'Install it with "npm install -g @oracle/suitecloud-c
 
 export type AccountSpecificValues = 'ERROR' | 'WARNING';
 
+export interface CreateProjectOptions {
+  name: string;
+  /** null for an account customization project. */
+  suiteApp: { publisherId: string; projectId: string; projectVersion: string } | null;
+  overwrite?: boolean;
+}
+
 /** Thin wrapper over the official `suitecloud` CLI; every call to it goes through here. */
 export class SuiteCloud {
   constructor(
@@ -49,6 +56,29 @@ export class SuiteCloud {
       'project:deploy',
       ...(options.dryRun ? ['--dryrun'] : []),
       ...accountSpecificValuesArgs(options.accountSpecificValues),
+    ]);
+  }
+
+  /** Creates the project in a new folder under cwd (named after the project, or <publisherid>.<projectid>). */
+  createProject(options: CreateProjectOptions): Promise<void> {
+    const suiteApp = options.suiteApp
+      ? [
+          '--publisherid',
+          options.suiteApp.publisherId,
+          '--projectid',
+          options.suiteApp.projectId,
+          '--projectversion',
+          options.suiteApp.projectVersion,
+        ]
+      : [];
+    return this.run([
+      'project:create',
+      '--type',
+      options.suiteApp ? 'SUITEAPP' : 'ACCOUNTCUSTOMIZATION',
+      '--projectname',
+      options.name,
+      ...suiteApp,
+      ...(options.overwrite ? ['--overwrite'] : []),
     ]);
   }
 

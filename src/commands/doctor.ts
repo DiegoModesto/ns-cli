@@ -53,7 +53,7 @@ export async function runChecks(cwd: string, suitecloud = new SuiteCloud(cwd)): 
     project.typescript
       ? {
           label: 'TypeScript',
-          value: `${rel(project.typescript.sourceDir)} → ${rel(project.typescript.outDir)} (${rel(project.typescript.tsconfig)})`,
+          value: `${rel(project.typescript.sourceDir)} → ${rel(project.typescript.outDir)} (${rel(project.typescript.tsconfig)}${project.config.bundler ? `, ${project.config.bundler}` : ''})`,
           ok: true,
         }
       : { label: 'TypeScript', value: 'not configured (JavaScript only)', ok: true },

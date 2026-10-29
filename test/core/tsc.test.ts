@@ -5,12 +5,15 @@ import { compileProject, parseWatchLine, watchProject } from '../../src/core/tsc
 
 const project = {
   root: '/work/project',
+  config: { tsconfig: 'tsconfig.build.json' },
   typescript: {
     tsconfig: '/work/project/tsconfig.build.json',
     sourceDir: '/work/project/src/Source',
     outDir: '/work/project/src/FileCabinet/SuiteScripts',
   },
 } as Project;
+
+const bundled = { ...project, config: { ...project.config, bundler: 'rollup' } } as Project;
 
 function fakeRunner(exitCode: ExecResult['exitCode']) {
   return vi.fn<Runner>(async () => ({ exitCode, stdout: '', stderr: '' }));
@@ -34,6 +37,24 @@ describe('compileProject', () => {
   it('reports an interrupted compilation instead of a missing compiler', async () => {
     const runner = vi.fn<Runner>(async () => ({ exitCode: undefined, signal: 'SIGTERM', stdout: '', stderr: '' }));
     await expect(compileProject(project, runner)).rejects.toThrow('TypeScript compilation was interrupted (SIGTERM).');
+  });
+
+  it('bundles with rollup after a clean check when the project has a bundler', async () => {
+    const runner = fakeRunner(0);
+    await compileProject(bundled, runner);
+    expect(runner.mock.calls.map(([command, args]) => [command, ...args])).toEqual([
+      ['tsc', '-p', 'tsconfig.build.json'],
+      ['rollup', '-c'],
+    ]);
+  });
+
+  it('does not bundle when the check fails, and explains a missing rollup', async () => {
+    const failing = fakeRunner(2);
+    await expect(compileProject(bundled, failing)).rejects.toThrow('TypeScript compilation failed.');
+    expect(failing).toHaveBeenCalledOnce();
+
+    const noRollup = vi.fn<Runner>(async (command) => ({ exitCode: command === 'tsc' ? 0 : undefined, stdout: '', stderr: '' }));
+    await expect(compileProject(bundled, noRollup)).rejects.toThrow('rollup not found.');
   });
 
   it('refuses JavaScript-only projects', async () => {
@@ -71,6 +92,36 @@ describe('watchProject', () => {
     ]);
     expect(onOutput).toHaveBeenCalledTimes(2);
     expect(onEvent).toHaveBeenCalledExactlyOnceWith({ type: 'finished', errors: 1 });
+  });
+
+  it('with a bundler, reports a clean build only after rollup ran', async () => {
+    const spawner = vi.fn<Spawner>(() => ({ exited: new Promise(() => {}), stop: async () => {} }));
+    let finishRollup: (result: ExecResult) => void = () => {};
+    const runner = vi.fn<Runner>(() => new Promise((resolve) => (finishRollup = resolve)));
+    const onEvent = vi.fn();
+
+    watchProject(bundled, { onOutput() {}, onEvent }, spawner, runner);
+    const { onLine } = spawner.mock.calls[0]![2];
+    onLine('Starting compilation in watch mode...');
+    onLine('Found 0 errors. Watching for file changes.');
+
+    expect(runner).toHaveBeenCalledWith('rollup', ['-c'], { cwd: '/work/project', stdio: 'pipe' });
+    expect(onEvent.mock.calls).toEqual([[{ type: 'started' }]]);
+
+    finishRollup({ exitCode: 1, stdout: '', stderr: '[!] Error' });
+    await vi.waitFor(() => expect(onEvent).toHaveBeenLastCalledWith({ type: 'finished', errors: 1 }));
+  });
+
+  it('with a bundler, does not bundle a check with errors', () => {
+    const spawner = vi.fn<Spawner>(() => ({ exited: new Promise(() => {}), stop: async () => {} }));
+    const runner = fakeRunner(0);
+    const onEvent = vi.fn();
+
+    watchProject(bundled, { onOutput() {}, onEvent }, spawner, runner);
+    spawner.mock.calls[0]![2].onLine('Found 3 errors. Watching for file changes.');
+
+    expect(runner).not.toHaveBeenCalled();
+    expect(onEvent).toHaveBeenCalledWith({ type: 'finished', errors: 3 });
   });
 
   it('refuses JavaScript-only projects', () => {

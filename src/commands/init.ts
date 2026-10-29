@@ -11,6 +11,7 @@ import {
 } from '../core/scaffold.js';
 import { SuiteCloud } from '../core/suitecloud.js';
 import { NskError } from '../errors.js';
+import { formatExamples, type Messages } from '../i18n.js';
 
 export interface InitOptions {
   suiteapp: boolean;
@@ -27,17 +28,18 @@ export interface InitDeps {
   install: (dir: string) => Promise<void>;
 }
 
-export function registerInit(program: Command): void {
+export function registerInit(program: Command, t: Messages): void {
   program
     .command('init')
-    .description('Create a SuiteCloud project set up for TypeScript')
-    .argument('<name>', 'project name')
-    .option('--suiteapp', 'create a SuiteApp instead of an account customization project', false)
-    .option('--publisher-id <id>', 'SuiteApp publisher id, e.g. com.acme')
-    .option('--project-id <id>', 'SuiteApp project id, e.g. myapp')
-    .option('--project-version <version>', 'SuiteApp version', '1.0.0')
-    .option('--no-install', 'skip "npm install"')
-    .option('--force', 'create the project even if the folder is not empty (suitecloud --overwrite)', false)
+    .description(t.init.description)
+    .argument('<name>', t.init.name)
+    .option('--suiteapp', t.init.suiteapp, false)
+    .option('--publisher-id <id>', t.init.publisherId)
+    .option('--project-id <id>', t.init.projectId)
+    .option('--project-version <version>', t.init.projectVersion, '1.0.0')
+    .option('--no-install', t.init.noInstall)
+    .option('--force', t.init.force, false)
+    .addHelpText('after', formatExamples(t.help.examples, t.init.examples))
     .action(async (name: string, options: InitOptions) => {
       const cwd = process.cwd();
       const dir = await runInit(name, options, {

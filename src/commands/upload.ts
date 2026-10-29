@@ -7,6 +7,7 @@ import { resolveUploadTarget, type UploadTarget } from '../core/paths.js';
 import { SuiteCloud } from '../core/suitecloud.js';
 import { compileProject } from '../core/tsc.js';
 import { NskError } from '../errors.js';
+import { formatExamples, type Messages } from '../i18n.js';
 
 export interface UploadOptions {
   dryRun: boolean;
@@ -22,14 +23,15 @@ export interface UploadDeps {
   confirm: Confirm;
 }
 
-export function registerUpload(program: Command): void {
+export function registerUpload(program: Command, t: Messages): void {
   program
     .command('upload')
-    .description('Compile (when needed) and upload files to the File Cabinet')
-    .argument('[files...]', '.ts sources or files inside the FileCabinet folder')
-    .option('--dry-run', 'show what would be uploaded, without compiling or uploading', false)
-    .option('--no-compile', 'upload the existing .js without compiling first')
-    .option('-y, --yes', 'skip the confirmation for protected accounts', false)
+    .description(t.upload.description)
+    .argument('[files...]', t.upload.files)
+    .option('--dry-run', t.upload.dryRun, false)
+    .option('--no-compile', t.upload.noCompile)
+    .option('-y, --yes', t.upload.yes, false)
+    .addHelpText('after', formatExamples(t.help.examples, t.upload.examples))
     .action(async (files: string[], options: UploadOptions) => {
       const cwd = process.cwd();
       const project = loadProject(cwd);

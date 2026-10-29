@@ -1,36 +1,14 @@
 import { createRequire } from 'node:module';
-import { Command } from 'commander';
-import { registerAccount } from './commands/account.js';
-import { registerBuild } from './commands/build.js';
-import { registerDeploy, registerValidate } from './commands/deploy.js';
-import { registerDoctor } from './commands/doctor.js';
-import { registerGenerate } from './commands/generate.js';
-import { registerInit } from './commands/init.js';
-import { registerTemplates } from './commands/templates.js';
-import { registerUpload } from './commands/upload.js';
-import { registerWatch } from './commands/watch.js';
 import { NskError } from './errors.js';
+import { detectLocale, stripLangArg } from './i18n.js';
+import { buildProgram } from './program.js';
 
 const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
 
-const program = new Command()
-  .name('nsk')
-  .description('TypeScript-first CLI for NetSuite SuiteCloud projects')
-  .version(version);
-
-registerInit(program);
-registerDoctor(program);
-registerTemplates(program);
-registerGenerate(program);
-registerBuild(program);
-registerUpload(program);
-registerWatch(program);
-registerValidate(program);
-registerDeploy(program);
-registerAccount(program);
+const program = buildProgram(detectLocale(process.argv, process.env), version);
 
 try {
-  await program.parseAsync();
+  await program.parseAsync(stripLangArg(process.argv));
 } catch (error) {
   if (!(error instanceof NskError)) throw error;
   console.error(`✖ ${error.message}`);

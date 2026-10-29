@@ -2,13 +2,17 @@ import type { Command } from 'commander';
 import { loadProject, type Project, writeAuthId } from '../core/config.js';
 import { SuiteCloud } from '../core/suitecloud.js';
 import { NskError } from '../errors.js';
+import { formatExamples, type Messages } from '../i18n.js';
 
-export function registerAccount(program: Command): void {
-  const account = program.command('account').description('List, switch and set up NetSuite accounts (auth IDs)');
+export function registerAccount(program: Command, t: Messages): void {
+  const account = program
+    .command('account')
+    .description(t.account.description)
+    .addHelpText('after', formatExamples(t.help.examples, t.account.examples));
 
   account
     .command('list')
-    .description('List the auth IDs configured on this machine')
+    .description(t.account.list)
     .action(async () => {
       const project = tryLoadProject();
       for (const line of await runAccountList(project, new SuiteCloud(process.cwd()))) console.log(line);
@@ -16,8 +20,8 @@ export function registerAccount(program: Command): void {
 
   account
     .command('use')
-    .description("Set the project's default auth ID (project.json)")
-    .argument('<authId>', 'auth ID (see "nsk account list")')
+    .description(t.account.use)
+    .argument('<authId>', t.account.authId)
     .action(async (authId: string) => {
       const project = loadProject(process.cwd());
       await runAccountUse(authId, project, new SuiteCloud(project.root));
@@ -26,7 +30,7 @@ export function registerAccount(program: Command): void {
 
   account
     .command('setup')
-    .description('Log in to an account and set it as the project default (suitecloud account:setup)')
+    .description(t.account.setup)
     .action(async () => {
       const project = loadProject(process.cwd());
       await new SuiteCloud(project.root).setupAccount();

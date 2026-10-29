@@ -16,6 +16,22 @@ export interface UploadTarget {
   needsCompile: boolean;
 }
 
+/**
+ * File Cabinet folders `suitecloud file:upload` accepts (taken from its validation errors). Anything else is
+ * rejected before calling suitecloud, with a clearer message.
+ */
+export const UPLOADABLE_FOLDERS = [
+  '/SuiteScripts',
+  '/SuiteApps',
+  '/Templates/E-mail Templates',
+  '/Templates/Marketing Templates',
+  '/Web Site Hosting Files',
+];
+
+export function isUploadable(fileCabinetPath: string): boolean {
+  return UPLOADABLE_FOLDERS.some((folder) => fileCabinetPath.startsWith(folder + '/'));
+}
+
 export function isInside(parent: string, child: string, p: PathApi = path): boolean {
   const relative = p.relative(parent, child);
   // Compare against `..` + sep, not a bare `..` prefix: a folder named `..x` is still inside.
@@ -57,12 +73,22 @@ export function resolveUploadTarget(
         'Point compilerOptions.outDir to a folder inside FileCabinet, e.g. src/FileCabinet/SuiteScripts.',
       );
     }
-    return { source, compiled, fileCabinetPath: toFileCabinetPath(compiled, project, p), needsCompile: true };
+    return uploadable({ source, compiled, fileCabinetPath: toFileCabinetPath(compiled, project, p), needsCompile: true });
   }
 
   if (isInside(project.fileCabinetDir, source, p)) {
-    return { source, compiled: source, fileCabinetPath: toFileCabinetPath(source, project, p), needsCompile: false };
+    const fileCabinetPath = toFileCabinetPath(source, project, p);
+    return uploadable({ source, compiled: source, fileCabinetPath, needsCompile: false });
   }
 
   throw new NskError(`${file} is not a TypeScript source nor a file inside the FileCabinet folder.`);
+}
+
+function uploadable(target: UploadTarget): UploadTarget {
+  if (!isUploadable(target.fileCabinetPath)) {
+    throw new NskError(
+      `${target.fileCabinetPath} cannot be uploaded: SuiteCloud only uploads files inside ${UPLOADABLE_FOLDERS.join(', ')}.`,
+    );
+  }
+  return target;
 }

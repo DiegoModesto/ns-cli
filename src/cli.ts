@@ -2,6 +2,8 @@ import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerDoctor } from './commands/doctor.js';
 import { registerTemplates } from './commands/templates.js';
+import { registerUpload } from './commands/upload.js';
+import { registerWatch } from './commands/watch.js';
 import { NskError } from './errors.js';
 
 const { version } = createRequire(import.meta.url)('../package.json') as { version: string };
@@ -13,6 +15,8 @@ const program = new Command()
 
 registerDoctor(program);
 registerTemplates(program);
+registerUpload(program);
+registerWatch(program);
 
 try {
   await program.parseAsync();

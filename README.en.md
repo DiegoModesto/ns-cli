@@ -4,7 +4,7 @@
 
 A TypeScript-first CLI for NetSuite SuiteCloud projects. It is a layer on top of the official [SuiteCloud CLI](https://www.npmjs.com/package/@oracle/suitecloud-cli): `suitecloud` still handles authentication and deployment, while `nsk` handles what is manual today — compiling TypeScript, finding the right `.js` in the File Cabinet, generating typed scripts and switching accounts.
 
-> **Status:** in development (`0.0.0`). The CLI currently ships the templates, the snippets and `nsk doctor`; the other project commands are on the [roadmap](#roadmap).
+> **Status:** in development (`0.0.0`). The CLI currently ships the templates, the snippets, `nsk doctor`, `nsk upload` and `nsk watch`; the other project commands are on the [roadmap](#roadmap).
 
 ## Requirements
 
@@ -38,6 +38,8 @@ nsk templates list                               # list the available templates
 nsk templates show user-event-script             # print the TypeScript template
 nsk templates show restlet --language javascript # JavaScript version
 nsk templates show script-object                 # SDF object (XML) with deployment
+nsk upload src/Source/App/ue_sales_order.ts      # compile and upload the matching .js
+nsk watch                                        # compile and upload on every save
 ```
 
 ### `nsk doctor`
@@ -55,6 +57,36 @@ Run it inside a SuiteCloud project (from any subfolder):
 ```
 
 It exits with code `1` when something is missing (CLI not installed, invalid `ns.config.json`, account not set up).
+
+### `nsk upload`
+
+Uploads files to the File Cabinet. It takes `.ts` sources (the compiled `.js` is uploaded) and files already inside the `FileCabinet` folder:
+
+```bash
+nsk upload src/Source/App/ue_sales_order.ts
+nsk upload src/FileCabinet/SuiteScripts/lib/utils.js src/Source/App/cs_order.ts
+nsk upload --dry-run src/Source/App/*.ts     # only print source → File Cabinet path
+nsk upload --no-compile src/Source/App/a.ts  # upload the existing .js without compiling
+```
+
+When any file is a `.ts`, the project is compiled once (with the project's own `tsc`) and every file goes in a single `suitecloud file:upload` call. SuiteCloud only accepts files inside `/SuiteScripts`, `/SuiteApps`, `/Templates/E-mail Templates`, `/Templates/Marketing Templates` and `/Web Site Hosting Files`; `nsk` rejects anything else before calling `suitecloud`.
+
+### `nsk watch`
+
+Replaces the VS Code "compile watch" + "upload" tasks: runs `tsc --watch` and uploads every changed file inside `FileCabinet`.
+
+```bash
+nsk watch              # compile and upload on every save
+nsk watch --no-upload  # compile only
+```
+
+- Nothing is uploaded on the first build; only changes made after it.
+- **Nothing is uploaded while TypeScript reports errors** (tsc emits `.js` even with errors).
+- Changes close together are batched into one upload, and uploads never run in parallel.
+- Files with the same content as their last upload are not uploaded again.
+- `.map`, `.d.ts`, `.tsbuildinfo` and hidden files are ignored. Deleted files stay in the account.
+- A failed upload is printed and `watch` keeps running. `Ctrl+C` stops everything.
+- In projects without a `tsconfig`, it uploads changed files in `FileCabinet` without compiling.
 
 ## Configuration
 
@@ -124,8 +156,6 @@ The snippets are the source of the templates: after changing the JSON, run `npm 
 |---|---|
 | `nsk init` | Create an SDF project already set up for TypeScript (`tsconfig`, `@hitc/netsuite-types`, `src/Source`, `ns.config.json`) |
 | `nsk generate <type> <name>` | Generate a script from the templates; with `--object`, also generate the SDF XML with its deployment |
-| `nsk upload [files]` | Compile and upload the matching `.js` to the File Cabinet |
-| `nsk watch` | Compile and upload automatically every time a file is saved |
 | `nsk validate` / `nsk deploy` | Compile and run `project:validate` / `project:deploy` |
 | `nsk account` | List, switch and set up accounts (sandbox, production) |
 
@@ -143,8 +173,8 @@ Layout:
 
 ```
 src/
-  commands/          CLI commands (doctor, templates)
-  core/              config, paths, suitecloud and tsc wrappers
+  commands/          CLI commands (doctor, templates, upload, watch)
+  core/              config, paths, suitecloud and tsc wrappers, watch upload queue
 templates/           generated templates (javascript/, typescript/, sdf/, manifest.json)
 snippets/            VS Code snippets (source of the templates)
 scripts/             maintenance scripts

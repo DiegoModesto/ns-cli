@@ -1,0 +1,150 @@
+[
+  {
+    "id": "custom-module",
+    "name": "Custom Module",
+    "kind": "module",
+    "scriptType": null,
+    "files": {
+      "javascript": "javascript/custom-module.js",
+      "typescript": "typescript/custom-module.ts"
+    }
+  },
+  {
+    "id": "scheduled-script",
+    "name": "Scheduled Script",
+    "kind": "script",
+    "scriptType": "ScheduledScript",
+    "files": {
+      "javascript": "javascript/scheduled-script.js",
+      "typescript": "typescript/scheduled-script.ts"
+    }
+  },
+  {
+    "id": "client-script",
+    "name": "Client Script",
+    "kind": "script",
+    "scriptType": "ClientScript",
+    "files": {
+      "javascript": "javascript/client-script.js",
+      "typescript": "typescript/client-script.ts"
+    }
+  },
+  {
+    "id": "user-event-script",
+    "name": "User Event Script",
+    "kind": "script",
+    "scriptType": "UserEventScript",
+    "files": {
+      "javascript": "javascript/user-event-script.js",
+      "typescript": "typescript/user-event-script.ts"
+    }
+  },
+  {
+    "id": "map-reduce-script",
+    "name": "Map/Reduce Script",
+    "kind": "script",
+    "scriptType": "MapReduceScript",
+    "files": {
+      "javascript": "javascript/map-reduce-script.js",
+      "typescript": "typescript/map-reduce-script.ts"
+    }
+  },
+  {
+    "id": "suitelet",
+    "name": "Suitelet",
+    "kind": "script",
+    "scriptType": "Suitelet",
+    "files": {
+      "javascript": "javascript/suitelet.js",
+      "typescript": "typescript/suitelet.ts"
+    }
+  },
+  {
+    "id": "restlet",
+    "name": "RESTlet",
+    "kind": "script",
+    "scriptType": "Restlet",
+    "files": {
+      "javascript": "javascript/restlet.js",
+      "typescript": "typescript/restlet.ts"
+    }
+  },
+  {
+    "id": "event-subscriber",
+    "name": "Event Subscriber",
+    "kind": "script",
+    "scriptType": "EventSubscriber",
+    "files": {
+      "javascript": "javascript/event-subscriber.js",
+      "typescript": "typescript/event-subscriber.ts"
+    }
+  },
+  {
+    "id": "mass-update-script",
+    "name": "Mass Update Script",
+    "kind": "script",
+    "scriptType": "MassUpdateScript",
+    "files": {
+      "javascript": "javascript/mass-update-script.js",
+      "typescript": "typescript/mass-update-script.ts"
+    }
+  },
+  {
+    "id": "portlet-script",
+    "name": "Portlet Script",
+    "kind": "script",
+    "scriptType": "Portlet",
+    "files": {
+      "javascript": "javascript/portlet-script.js",
+      "typescript": "typescript/portlet-script.ts"
+    }
+  },
+  {
+    "id": "workflow-action-script",
+    "name": "Workflow Action Script",
+    "kind": "script",
+    "scriptType": "WorkflowActionScript",
+    "files": {
+      "javascript": "javascript/workflow-action-script.js",
+      "typescript": "typescript/workflow-action-script.ts"
+    }
+  },
+  {
+    "id": "bundle-installation-script",
+    "name": "Bundle Installation Script",
+    "kind": "script",
+    "scriptType": "BundleInstallationScript",
+    "files": {
+      "javascript": "javascript/bundle-installation-script.js",
+      "typescript": "typescript/bundle-installation-script.ts"
+    }
+  },
+  {
+    "id": "sdf-installation-script",
+    "name": "SDF Installation Script",
+    "kind": "script",
+    "scriptType": "SDFInstallationScript",
+    "files": {
+      "javascript": "javascript/sdf-installation-script.js",
+      "typescript": "typescript/sdf-installation-script.ts"
+    }
+  },
+  {
+    "id": "script-object",
+    "name": "SDF Script Object with Deployment",
+    "kind": "sdf-object",
+    "tokens": [
+      "scriptType",
+      "scriptId",
+      "description",
+      "name",
+      "scriptFile",
+      "logLevel",
+      "recordType",
+      "status"
+    ],
+    "files": {
+      "xml": "sdf/script-object.xml"
+    }
+  }
+]

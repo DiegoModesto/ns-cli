@@ -1,0 +1,25 @@
+<{{scriptType}} scriptid="customscript_{{scriptId}}">
+    <description>{{description}}</description>
+    <isinactive>F</isinactive>
+    <name>{{name}}</name>
+    <notifyadmins>F</notifyadmins>
+    <notifyemails></notifyemails>
+    <notifyowner>T</notifyowner>
+    <notifyuser>F</notifyuser>
+    <scriptfile>[/SuiteScripts/{{scriptFile}}]</scriptfile>
+    <scriptdeployments>
+        <scriptdeployment scriptid="customdeploy_{{scriptId}}">
+            <allemployees>F</allemployees>
+            <alllocalizationcontexts>T</alllocalizationcontexts>
+            <allpartners>F</allpartners>
+            <allroles>T</allroles>
+            <audslctrole></audslctrole>
+            <eventtype></eventtype>
+            <executioncontext>ACTION|ADVANCEDREVREC|BANKCONNECTIVITY|BANKSTATEMENTPARSER|BUNDLEINSTALLATION|CLIENT|CONSOLRATEADJUSTOR|CSVIMPORT|CUSTOMGLLINES|CUSTOMMASSUPDATE|DATASETBUILDER|DEBUGGER|EMAILCAPTURE|FICONNECTIVITY|FIPARSER|MAPREDUCE|OTHER|PAYMENTGATEWAY|PAYMENTPOSTBACK|PLATFORMEXTENSION|PORTLET|PROMOTIONS|RECORDACTION|RESTLET|RESTWEBSERVICES|SCHEDULED|SDFINSTALLATION|SHIPPINGPARTNERS|SUITELET|TAXCALCULATION|USEREVENT|USERINTERFACE|WEBSERVICES|WORKBOOKBUILDER|WORKFLOW</executioncontext>
+            <isdeployed>T</isdeployed>
+            <loglevel>{{logLevel}}</loglevel>
+            <recordtype>{{recordType}}</recordtype>
+            <status>{{status}}</status>
+        </scriptdeployment>
+    </scriptdeployments>
+</{{scriptType}}>

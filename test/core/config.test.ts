@@ -1,8 +1,8 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { findProjectRoot, loadProject } from '../../src/core/config.js';
+import { findProjectRoot, loadProject, writeAuthId } from '../../src/core/config.js';
 import { NskError } from '../../src/errors.js';
 
 let root: string;
@@ -38,6 +38,18 @@ describe('findProjectRoot', () => {
 
   it('throws a NskError outside a project', () => {
     expect(() => findProjectRoot(root)).toThrow(NskError);
+  });
+});
+
+describe('writeAuthId', () => {
+  it('sets defaultAuthId keeping other keys, or creates project.json', () => {
+    write('suitecloud.config.js', SUITECLOUD_CONFIG);
+    writeAuthId(root, 'sandbox');
+    expect(loadProject(root).authId).toBe('sandbox');
+
+    write('project.json', '{ "defaultAuthId": "sandbox", "other": 1 }');
+    writeAuthId(root, 'production');
+    expect(JSON.parse(readFileSync(join(root, 'project.json'), 'utf8'))).toEqual({ defaultAuthId: 'production', other: 1 });
   });
 });
 
@@ -143,6 +155,13 @@ describe('loadProject', () => {
     expect(loadProject(root).config.bundler).toBe('rollup');
     write('ns.config.json', '{ "bundler": "webpack" }');
     expect(() => loadProject(root)).toThrow(/bundler/);
+  });
+
+  it('reads protectedAuthIds (empty by default)', () => {
+    write('suitecloud.config.js', SUITECLOUD_CONFIG);
+    expect(loadProject(root).config.protectedAuthIds).toEqual([]);
+    write('ns.config.json', '{ "protectedAuthIds": ["production"] }');
+    expect(loadProject(root).config.protectedAuthIds).toEqual(['production']);
   });
 
   it('rejects unknown keys in ns.config.json', () => {

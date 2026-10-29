@@ -46,9 +46,17 @@ describe('SuiteCloud', () => {
     ]);
   });
 
-  it('captures the auth ID list', async () => {
-    const runner = fakeRunner({ stdout: 'sandbox | 123_SB1 | Administrator' });
-    expect(await new SuiteCloud('/p', runner).listAuthIds()).toContain('sandbox');
+  it('lists and parses the auth IDs', async () => {
+    const stdout = [
+      '\u001b[2K\u001b[1Gacme_prd | Administrator @ Acme Inc ',
+      'acme_sb1 | Developer @ Acme Inc | 123456-sb1.app.netsuite.com',
+      '',
+    ].join('\n');
+    const runner = fakeRunner({ stdout });
+    expect(await new SuiteCloud('/p', runner).listAuthIds()).toEqual([
+      { id: 'acme_prd', description: 'Administrator @ Acme Inc' },
+      { id: 'acme_sb1', description: 'Developer @ Acme Inc' },
+    ]);
     expect(runner).toHaveBeenCalledWith('suitecloud', ['account:manageauth', '--list'], { cwd: '/p', stdio: 'pipe' });
   });
 

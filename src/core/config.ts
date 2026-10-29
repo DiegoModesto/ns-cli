@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { z } from 'zod';
@@ -22,6 +22,8 @@ const configSchema = z
      * because TypeScript 7 cannot emit AMD.
      */
     bundler: z.enum(['rollup']).optional(),
+    /** Auth IDs (e.g. production) where deploy/upload/watch ask for confirmation unless --yes is given. */
+    protectedAuthIds: z.array(z.string()).default([]),
   })
   .strict();
 
@@ -140,6 +142,20 @@ function readSuiteApp(projectFolder: string): SuiteAppInfo | null {
     throw new NskError(`${file} is a SuiteApp manifest without <publisherid> and <projectid>.`);
   }
   return { publisherId, projectId };
+}
+
+/** Sets defaultAuthId in <root>/project.json, keeping any other keys. */
+export function writeAuthId(root: string, authId: string): void {
+  const file = join(root, 'project.json');
+  let json: Record<string, unknown> = {};
+  if (existsSync(file)) {
+    try {
+      json = parseJsonc(readFileSync(file, 'utf8'));
+    } catch (error) {
+      throw new NskError(`project.json is not valid JSON: ${(error as Error).message}`);
+    }
+  }
+  writeFileSync(file, JSON.stringify({ ...json, defaultAuthId: authId }, null, 2) + '\n');
 }
 
 function readAuthId(root: string): string | null {

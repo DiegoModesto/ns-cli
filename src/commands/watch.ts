@@ -3,6 +3,7 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { loadProject } from '../core/config.js';
 import { notStarted, type LongRunning } from '../core/exec.js';
+import { guardProtectedAccount } from '../core/guard.js';
 import { isUploadable, toFileCabinetPath } from '../core/paths.js';
 import { SuiteCloud } from '../core/suitecloud.js';
 import { watchProject } from '../core/tsc.js';
@@ -14,10 +15,14 @@ export function registerWatch(program: Command): void {
     .command('watch')
     .description('Compile on save (tsc --watch) and upload every changed file in the FileCabinet')
     .option('--no-upload', 'only compile, do not upload')
-    .action(async (options: { upload: boolean }) => {
+    .option('-y, --yes', 'skip the confirmation for protected accounts', false)
+    .action(async (options: { upload: boolean; yes: boolean }) => {
       const project = loadProject(process.cwd());
       if (!project.typescript && !options.upload) {
         throw new NskError('Nothing to watch: the project has no tsconfig and --no-upload was given.');
+      }
+      if (options.upload) {
+        await guardProtectedAccount(project, 'Upload every saved file to it', options.yes);
       }
 
       const log = (message: string) => console.log(`[${new Date().toLocaleTimeString()}] ${message}`);

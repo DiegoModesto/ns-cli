@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isInside, resolveUploadTarget, toFileCabinetPath } from '../../src/core/paths.js';
+import { isInside, isUploadable, resolveUploadTarget, toFileCabinetPath } from '../../src/core/paths.js';
 import { NskError } from '../../src/errors.js';
 
 const cases = [
@@ -15,6 +15,16 @@ const cases = [
     root: 'C:\\work\\project',
   },
 ] as const;
+
+describe('isUploadable', () => {
+  it('accepts only paths below the folders suitecloud can upload', () => {
+    expect(isUploadable('/SuiteScripts/a.js')).toBe(true);
+    expect(isUploadable('/Templates/E-mail Templates/welcome.html')).toBe(true);
+    expect(isUploadable('/SuiteScripts')).toBe(false);
+    expect(isUploadable('/SuiteScriptsOld/a.js')).toBe(false);
+    expect(isUploadable('/Templates/a.html')).toBe(false);
+  });
+});
 
 describe.each(cases)('paths ($os)', ({ p, root }) => {
   const project = {
@@ -71,6 +81,18 @@ describe.each(cases)('paths ($os)', ({ p, root }) => {
   it('rejects an outDir outside the FileCabinet', () => {
     const misconfigured = { ...project, typescript: { ...project.typescript, outDir: p.join(root, 'dist') } };
     expect(() => resolveUploadTarget(p.join(root, 'src', 'Source', 'a.ts'), misconfigured, p)).toThrow(/outDir/);
+  });
+
+  it('accepts folders with spaces, like Web Site Hosting Files', () => {
+    const file = p.join(root, 'src', 'FileCabinet', 'Web Site Hosting Files', 'shop', 'app.js');
+    expect(resolveUploadTarget(file, project, p).fileCabinetPath).toBe('/Web Site Hosting Files/shop/app.js');
+  });
+
+  it('rejects files outside the folders suitecloud can upload', () => {
+    expect(() => resolveUploadTarget(p.join(root, 'src', 'FileCabinet', 'readme.js'), project, p)).toThrow(/cannot be uploaded/);
+    expect(() => resolveUploadTarget(p.join(root, 'src', 'FileCabinet', 'Templates', 'a.html'), project, p)).toThrow(
+      /cannot be uploaded/,
+    );
   });
 
   it('isInside is false for the folder itself and for siblings with a common prefix', () => {

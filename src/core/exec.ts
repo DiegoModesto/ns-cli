@@ -1,3 +1,4 @@
+import { createInterface } from 'node:readline';
 import { execa } from 'execa';
 
 export interface ExecOptions {
@@ -36,5 +37,45 @@ export const execaRunner: Runner = async (command, args, { cwd, stdio }) => {
     signal: result.signal,
     stdout: typeof result.stdout === 'string' ? result.stdout : '',
     stderr: typeof result.stderr === 'string' ? result.stderr : '',
+  };
+};
+
+/** A process that runs until stopped, like `tsc --watch`. */
+export interface LongRunning {
+  /** Resolves when the process exits, whatever the reason. */
+  exited: Promise<ExecResult>;
+  /** Terminates the process and waits for it to exit. */
+  stop(): Promise<void>;
+}
+
+/** Starts a long-running process, handing each output line (stdout and stderr) to `onLine`. */
+export type Spawner = (
+  command: string,
+  args: string[],
+  options: { cwd: string; onLine: (line: string) => void },
+) => LongRunning;
+
+export const execaSpawner: Spawner = (command, args, { cwd, onLine }) => {
+  const subprocess = execa(command, args, {
+    cwd,
+    stdin: 'ignore',
+    all: true,
+    buffer: false,
+    reject: false,
+    preferLocal: true,
+    localDir: cwd,
+  });
+  if (subprocess.all) {
+    createInterface({ input: subprocess.all }).on('line', onLine);
+  }
+  const exited = subprocess.then(
+    (result): ExecResult => ({ exitCode: result.exitCode, signal: result.signal, stdout: '', stderr: '' }),
+  );
+  return {
+    exited,
+    async stop() {
+      subprocess.kill();
+      await exited;
+    },
   };
 };

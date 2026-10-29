@@ -1,6 +1,6 @@
 {
   "name": "@diegomodesto/ns",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "TypeScript-first CLI for NetSuite SuiteCloud projects, built on top of the SuiteCloud CLI",
   "keywords": [
     "netsuite",

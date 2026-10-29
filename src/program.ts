@@ -43,7 +43,7 @@ export function buildProgram(locale: Locale, version: string): Command {
     .addHelpText('after', `\n${t.help.footer}`);
 
   program.commandsGroup(t.help.groups.project);
-  registerInit(program, t);
+  registerInit(program, t, version);
   registerDoctor(program, t);
   registerGenerate(program, t);
   registerBuild(program, t);

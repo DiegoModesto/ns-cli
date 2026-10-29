@@ -57,6 +57,7 @@ describe('runInit', () => {
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
     expect(pkg.scripts.build).toBe('nsk build');
     expect(pkg.devDependencies).toHaveProperty('typescript');
+    expect(pkg.devDependencies).not.toHaveProperty('@diegomodesto/ns');
     expect(readFileSync(join(dir, 'rollup.config.mjs'), 'utf8')).toContain("const outDir = 'src/FileCabinet/SuiteScripts';");
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('node_modules\nproject.json\n\n# nsk\n.env\n');
   });
@@ -77,6 +78,12 @@ describe('runInit', () => {
     const project = loadProject(dir);
     expect(project.suiteApp).toEqual({ publisherId: 'com.acme', projectId: 'myapp' });
     expect(project.typescript?.outDir).toBe(join(dir, 'src/FileCabinet/SuiteApps/com.acme.myapp'));
+  });
+
+  it('adds the running nsk version to devDependencies', async () => {
+    const dir = await runInit('demo', defaults, { ...fakeDeps(), nskVersion: '0.1.0' });
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.devDependencies['@diegomodesto/ns']).toBe('^0.1.0');
   });
 
   it('requires the SuiteApp ids', async () => {

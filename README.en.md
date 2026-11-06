@@ -92,14 +92,37 @@ Precedence: `--lang` (anywhere in the command line) → `NSK_LANG` variable → 
 
 ### `nsk init`
 
-Creates a SuiteCloud project ready for TypeScript:
+Creates a SuiteCloud project ready for TypeScript, from a project template:
 
 ```bash
-nsk init my-project                      # account customization project
+nsk init my-project                      # account customization project, standard template
 nsk init my-app --suiteapp --publisher-id com.acme --project-id myapp [--project-version 1.0.0]
+nsk init my-project --template minimal   # only the TypeScript setup
+nsk init my-project -t github:acme/ns-template#v2    # your own template (folder or git repository)
 ```
 
-It runs `suitecloud project:create` and adds `package.json`, `tsconfig.json`, `ns.config.json`, `rollup.config.mjs` and `src/Source/`, then runs `npm install` (skip it with `--no-install`). The folder is `<name>` or, for SuiteApps, `<publisherid>.<projectid>`. A folder that is not empty is only used with `--force`.
+It runs `suitecloud project:create` (which still writes `manifest.xml`, `deploy.xml` and `suitecloud.config.js`), adds `package.json`, `tsconfig.json`, `ns.config.json`, `rollup.config.mjs` and `src/Source/`, lays the template over them and runs `npm install` (skip it with `--no-install`). The folder is `<name>` or, for SuiteApps, `<publisherid>.<projectid>`. A folder that is not empty is only used with `--force`.
+
+#### Project templates
+
+| Template | What it adds |
+|---|---|
+| `standard` (default) | `src/Source/App/{_EntryPoints,lib,services}` layout with an example User Event; tests with [Vitest](https://vitest.dev) and mocks of the `N/*` modules in `test/mocks/N`; lint and formatting with [Biome](https://biomejs.dev); `.vscode/` (`nsk watch`/`upload`/`build` tasks, recommended extensions, format on save); GitHub Actions running lint, typecheck, tests and build; `README.md` |
+| `minimal` | Only what `nsk init` always generates (tsconfig, rollup, empty `src/Source/`) |
+
+`standard` scripts: `npm test`, `npm run typecheck` (scripts and tests), `npm run lint`, `npm run format`, plus `build`, `watch`, `upload` and `deploy`. Linting uses Biome instead of ESLint because `typescript-eslint` does not work with TypeScript 7 yet.
+
+In tests, every `N/<module>` import loads `test/mocks/N/<module>.ts` (set up in `vitest.config.mjs`), so you control NetSuite with `vi.mocked(search.create).mockReturnValue(...)`. When a script uses a module with no mock yet, add the file exporting `vi.fn()` for the functions it uses.
+
+**Your own template:** `--template` takes a folder (`./templates/acme`) or a git repository (`github:user/repo`, `https://…/repo.git`, `git@host:repo.git`; a trailing `#branch` or `#tag` picks the version). Repositories are cloned with `git clone --depth 1`. The template's files are copied into the project, and:
+
+- `package.json` is merged into the generated one: `scripts`, `devDependencies` and other objects get the template's keys; other fields are replaced.
+- `.gitignore` (or `_gitignore`) has its lines added to the project's `.gitignore`.
+- Other files replace the generated ones (for example, your own `tsconfig.json`).
+- `template.json` (optional, with a `description`) and `.git` are not copied.
+- In text files, the markers `{{name}}`, `{{packageName}}`, `{{sourceDir}}` (`src/Source`), `{{outDir}}` (e.g. `src/FileCabinet/SuiteScripts`) and `{{fileCabinetFolder}}` (e.g. `/SuiteScripts`) are filled in; other `{{...}}` are left as they are.
+
+A template that does not exist or cannot be cloned fails before any file is created.
 
 **TypeScript 7 + rollup:** TypeScript 7 no longer emits AMD (`define`), which SuiteScript requires. In projects created by `nsk init`, `tsc` only type-checks (`noEmit`) and rollup emits one AMD `.js` per module, keeping the folder structure and the `@NApiVersion`/`@NScriptType` header. `nsk build`, `nsk upload` and `nsk watch` run both in sequence, and rollup only runs when the check has no errors. Import NetSuite modules as namespaces (`import * as record from 'N/record'`): they have no default export, and the build rejects `import record from 'N/record'`.
 
@@ -267,6 +290,7 @@ src/
   commands/          CLI commands (one file per command)
   core/              config, paths, suitecloud/tsc/rollup wrappers, watch upload queue, init scaffold
 templates/           generated templates (javascript/, typescript/, sdf/, manifest.json)
+project-templates/   nsk init project templates (standard/, minimal/)
 snippets/            VS Code snippets (source of the templates)
 scripts/             maintenance scripts
 test/                tests

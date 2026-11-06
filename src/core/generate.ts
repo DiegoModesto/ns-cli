@@ -17,7 +17,7 @@ export interface GenerateOptions {
 
 export interface GeneratedFile {
   path: string;
-  content: string;
+  content: string | Uint8Array;
 }
 
 type GenerateProject = Pick<Project, 'fileCabinetDir' | 'typescript' | 'projectFolder' | 'suiteApp'>;

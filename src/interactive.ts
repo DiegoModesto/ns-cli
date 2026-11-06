@@ -88,6 +88,17 @@ const QUESTIONS: Record<CommandName, (deps: InteractiveDeps) => Promise<string[]
     if (existsSync(target) && readdirSync(target).length > 0 && (await prompt.confirm(i.overwriteFolder, false))) {
       args.push('--force');
     }
+    const template = await prompt.select(i.projectTemplate, [
+      { value: 'standard', label: 'standard', hint: i.standardHint },
+      { value: 'minimal', label: 'minimal', hint: i.minimalHint },
+      { value: 'custom', label: i.customTemplate, hint: i.customTemplateHint },
+    ]);
+    if (template === 'custom') {
+      const source = await prompt.text(i.templateSource, { validate: (value) => (value.trim() ? undefined : i.required) });
+      args.push('--template', source.trim());
+    } else if (template !== 'standard') {
+      args.push('--template', template);
+    }
     if (!(await prompt.confirm(i.install, true))) args.push('--no-install');
     return args;
   },

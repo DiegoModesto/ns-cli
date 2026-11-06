@@ -1,0 +1,3 @@
+{
+  "description": "Only the TypeScript setup (tsconfig, rollup) and an empty src/Source"
+}

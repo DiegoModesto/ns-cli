@@ -21,7 +21,8 @@ export const DEV_DEPENDENCIES = {
   typescript: '^7.0.2',
 };
 
-const SOURCE_DIR = 'src/Source';
+/** TypeScript sources, relative to the project root. */
+export const SOURCE_DIR = 'src/Source';
 
 /** Folder `suitecloud project:create` creates: the project name, or <publisherid>.<projectid> for SuiteApps. */
 export function projectFolderName(options: ScaffoldOptions): string {
@@ -33,6 +34,18 @@ export function scaffoldOutDir(options: ScaffoldOptions): string {
   return options.suiteApp
     ? `src/FileCabinet/SuiteApps/${options.suiteApp.publisherId}.${options.suiteApp.projectId}`
     : 'src/FileCabinet/SuiteScripts';
+}
+
+/** Values for the {{token}} markers in project templates. */
+export function scaffoldTokens(options: ScaffoldOptions): Record<string, string> {
+  const outDir = scaffoldOutDir(options);
+  return {
+    name: options.name,
+    packageName: packageName(options.name),
+    sourceDir: SOURCE_DIR,
+    outDir,
+    fileCabinetFolder: outDir.slice('src/FileCabinet'.length),
+  };
 }
 
 /** Files nsk adds on top of what `suitecloud project:create` generates. */
@@ -78,7 +91,7 @@ function packageJson(name: string, nskVersion: string | undefined) {
   // 0.0.0 is a build from source, which is not on npm.
   const nsk = nskVersion && nskVersion !== '0.0.0' ? { '@diegomodesto/ns': `^${nskVersion}` } : {};
   return {
-    name: name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-'),
+    name: packageName(name),
     private: true,
     scripts: {
       build: 'nsk build',
@@ -165,6 +178,10 @@ export default {
   },
 };
 `;
+}
+
+function packageName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-');
 }
 
 function json(value: unknown): string {

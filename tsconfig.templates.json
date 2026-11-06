@@ -12,5 +12,5 @@
       "N/*": ["./node_modules/@hitc/netsuite-types/N/*"]
     }
   },
-  "include": ["templates/typescript/*.ts"]
+  "include": ["templates/typescript/*.ts", "project-templates/*/src/**/*.ts"]
 }

@@ -1,17 +1,18 @@
-import { Command, Help, type Option } from 'commander';
+import { type Argument, Command, Help, type Option } from 'commander';
 import { registerAccount } from './commands/account.js';
 import { registerBuild } from './commands/build.js';
 import { registerDeploy, registerValidate } from './commands/deploy.js';
 import { registerDoctor } from './commands/doctor.js';
 import { registerGenerate } from './commands/generate.js';
 import { registerInit } from './commands/init.js';
+import { type LanguageInfo, registerLanguage } from './commands/language.js';
 import { registerTemplates } from './commands/templates.js';
 import { registerUpload } from './commands/upload.js';
 import { registerWatch } from './commands/watch.js';
 import { type Locale, type Messages, messagesFor } from './i18n.js';
 
 /** Builds the nsk program with every description, help title and example in `locale`. */
-export function buildProgram(locale: Locale, version: string): Command {
+export function buildProgram(locale: Locale, version: string, language?: LanguageInfo): Command {
   const t = messagesFor(locale);
   const titles: Record<string, string> = {
     'Usage:': t.help.usage,
@@ -37,10 +38,12 @@ export function buildProgram(locale: Locale, version: string): Command {
       commandUsage: (command) => placeholders(base.commandUsage(command)),
       subcommandTerm: (command) => placeholders(base.subcommandTerm(command)),
       optionDescription: (option) => describeOption(option, t),
+      argumentDescription: (argument) => describeArgument(argument, t),
     })
-    // Read and removed from argv by cli.ts before parsing; declared only so the help lists it.
+    // --lang and -i are read and removed from argv by cli.ts before parsing; declared so the help lists them.
     .option('--lang <lang>', t.help.lang)
-    .addHelpText('after', `\n${t.help.footer}`);
+    .option('-i, --interactive', t.interactive.option)
+    .addHelpText('after', `\n${t.interactive.footer}\n${t.help.footer}`);
 
   program.commandsGroup(t.help.groups.project);
   registerInit(program, t, version);
@@ -58,6 +61,9 @@ export function buildProgram(locale: Locale, version: string): Command {
   program.commandsGroup(t.help.groups.accounts);
   registerAccount(program, t);
 
+  program.commandsGroup(t.help.groups.settings);
+  registerLanguage(program, t, language ?? { locale, source: 'default', computer: () => locale });
+
   return program;
 }
 
@@ -69,4 +75,13 @@ function describeOption(option: Option, t: Messages): string {
     extra.push(`${t.help.default}: ${option.defaultValueDescription ?? String(option.defaultValue)}`);
   }
   return extra.length > 0 ? `${option.description} (${extra.join(', ')})` : option.description;
+}
+
+function describeArgument(argument: Argument, t: Messages): string {
+  const extra: string[] = [];
+  if (argument.argChoices) extra.push(`${t.help.choices}: ${argument.argChoices.join(', ')}`);
+  if (argument.defaultValue !== undefined) {
+    extra.push(`${t.help.default}: ${argument.defaultValueDescription ?? String(argument.defaultValue)}`);
+  }
+  return extra.length > 0 ? `${argument.description} (${extra.join(', ')})` : argument.description;
 }

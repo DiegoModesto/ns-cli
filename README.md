@@ -63,15 +63,32 @@ Rode dentro de um projeto SuiteCloud (em qualquer subpasta):
 
 Termina com código `1` se algo estiver faltando (CLI não instalado, `ns.config.json` inválido, conta não configurada).
 
+### Modo interativo
+
+Não sabe qual comando usar? Abra o menu e responda as perguntas, como no `suitecloud -i`:
+
+```bash
+nsk                          # sem argumentos, no terminal: abre o menu
+nsk -i                       # menu com todos os comandos
+nsk deploy -i                # só as perguntas de um comando
+```
+
+Use as setas para navegar, digite para filtrar listas longas (templates, arquivos) e Enter para confirmar. O menu só pergunta o que faz sentido para o projeto: lista os templates, os arquivos que podem ser enviados e os auth IDs configurados, só oferece `--object` para os tipos com objeto SDF, só pergunta `--asv` em account customization projects e só pergunta se sobrescreve quando o arquivo já existe. No final, mostra o **comando equivalente** (por exemplo `nsk deploy --dry-run`) e pergunta se pode executar; assim, da próxima vez, dá para rodar direto. `Ctrl+C` cancela a qualquer momento.
+
 ### Ajuda e idioma
 
 ```bash
 nsk --help                   # comandos agrupados, com explicação
 nsk deploy --help            # opções e exemplos de um comando (ou: nsk help deploy)
-nsk --help --lang en         # ajuda em inglês
+nsk language                 # mostra o idioma atual e de onde ele veio
+nsk language es              # passa a usar espanhol (en, es, pt)
+nsk language auto            # volta a seguir o idioma do computador
+nsk --help --lang en         # só este comando em inglês
 ```
 
-A ajuda está em português e inglês. O idioma vem de `--lang pt|en` (vale em qualquer posição do comando), da variável `NSK_LANG` ou do idioma do sistema (`LC_ALL`, `LC_MESSAGES`, `LANG`): tudo que começa com `pt` mostra português, o resto mostra inglês. Para fixar: `export NSK_LANG=pt`. As mensagens de erro e de progresso continuam em inglês.
+A ajuda, o modo interativo e o `nsk language` estão em **português, inglês e espanhol**. Sem configuração nenhuma, o `nsk` usa o idioma do computador: o do terminal (`LC_ALL`, `LC_MESSAGES`, `LANG`) e, se ele não estiver definido, o idioma do sistema (no macOS, o configurado em Ajustes do Sistema → Idioma e Região). Idiomas sem tradução caem em inglês.
+
+Ordem de prioridade: `--lang` (vale em qualquer posição do comando) → variável `NSK_LANG` → idioma salvo com `nsk language` → idioma do computador → inglês. O idioma salvo fica em `~/.config/nsk/settings.json` (Windows: `%APPDATA%\nsk\settings.json`). As mensagens de erro e de progresso continuam em inglês.
 
 ### `nsk init`
 

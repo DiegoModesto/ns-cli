@@ -63,15 +63,32 @@ Run it inside a SuiteCloud project (from any subfolder):
 
 It exits with code `1` when something is missing (CLI not installed, invalid `ns.config.json`, account not set up).
 
+### Interactive mode
+
+Not sure which command to use? Open the menu and answer the questions, like `suitecloud -i`:
+
+```bash
+nsk                          # no arguments, in a terminal: opens the menu
+nsk -i                       # menu with every command
+nsk deploy -i                # only the questions of one command
+```
+
+Use the arrow keys to move, type to filter long lists (templates, files) and Enter to confirm. The menu only asks what makes sense for the project: it lists the templates, the files that can be uploaded and the configured auth IDs, offers `--object` only for the types with an SDF object, asks `--asv` only in account customization projects and asks about overwriting only when the file already exists. At the end it shows the **equivalent command** (e.g. `nsk deploy --dry-run`) and asks whether to run it, so next time you can run it directly. `Ctrl+C` cancels at any time.
+
 ### Help and language
 
 ```bash
 nsk --help                   # grouped commands, with explanations
 nsk deploy --help            # options and examples of a command (or: nsk help deploy)
-nsk --help --lang pt         # help in Portuguese
+nsk language                 # show the current language and where it comes from
+nsk language es              # switch to Spanish (en, es, pt)
+nsk language auto            # follow the computer language again
+nsk --help --lang pt         # only this command in Portuguese
 ```
 
-The help is available in English and Portuguese. The language comes from `--lang en|pt` (anywhere in the command line), the `NSK_LANG` variable or the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`): anything starting with `pt` shows Portuguese, everything else English. To pin it: `export NSK_LANG=en`. Error and progress messages stay in English.
+The help, the interactive mode and `nsk language` are available in **English, Portuguese and Spanish**. With no configuration, `nsk` uses the computer language: the terminal one (`LC_ALL`, `LC_MESSAGES`, `LANG`) and, when that is not set, the system language (on macOS, the one in System Settings → Language & Region). Languages without a translation fall back to English.
+
+Precedence: `--lang` (anywhere in the command line) → `NSK_LANG` variable → language saved with `nsk language` → computer language → English. The saved language lives in `~/.config/nsk/settings.json` (Windows: `%APPDATA%\nsk\settings.json`). Error and progress messages stay in English.
 
 ### `nsk init`
 

@@ -7,7 +7,7 @@ import { isInside, isUploadable, toFileCabinetPath } from './core/paths.js';
 import { type AuthIdEntry, SuiteCloud } from './core/suitecloud.js';
 import { isIgnored } from './core/watch.js';
 import { NskError } from './errors.js';
-import type { Messages } from './i18n.js';
+import { LANGUAGE_NAMES, LOCALES, type Locale, type Messages } from './i18n.js';
 import { type Choice, clackPrompter, type Prompter } from './prompter.js';
 import { loadTemplates, type TemplateLanguage } from './templates.js';
 
@@ -17,6 +17,8 @@ export interface InteractiveDeps {
   cwd: string;
   loadProject: (cwd: string) => Project;
   listAuthIds: (cwd: string) => Promise<AuthIdEntry[]>;
+  /** Language saved with `nsk language`, so the menu starts on it. */
+  savedLanguage?: Locale;
 }
 
 /** Commands in the order of the main help; each one asks its own questions. */
@@ -31,6 +33,7 @@ export const INTERACTIVE_COMMANDS = [
   'validate',
   'deploy',
   'account',
+  'language',
 ] as const;
 
 type CommandName = (typeof INTERACTIVE_COMMANDS)[number];
@@ -225,6 +228,18 @@ const QUESTIONS: Record<CommandName, (deps: InteractiveDeps) => Promise<string[]
     );
     return ['account', 'use', authId];
   },
+
+  async language({ prompt, t, savedLanguage }) {
+    const language = await prompt.select<Locale | 'auto'>(
+      t.interactive.chooseLanguage,
+      [
+        { value: 'auto', label: t.interactive.autoLanguage },
+        ...LOCALES.map((locale) => ({ value: locale, label: LANGUAGE_NAMES[locale] })),
+      ],
+      savedLanguage ?? 'auto',
+    );
+    return ['language', language];
+  },
 };
 
 function validateName(value: string, t: Messages): string | undefined {
@@ -289,7 +304,11 @@ export function takeInteractiveFlag(argv: string[]): { interactive: boolean; arg
  * Terminal session: asks the questions, shows the equivalent command and asks whether to run it. Returns the
  * arguments to run, or null when the user chose not to.
  */
-export async function startInteractive(command: string | undefined, t: Messages): Promise<string[] | null> {
+export async function startInteractive(
+  command: string | undefined,
+  t: Messages,
+  savedLanguage?: Locale,
+): Promise<string[] | null> {
   clack.updateSettings({ messages: { cancel: t.interactive.cancelled } });
   clack.intro(t.interactive.intro);
   const args = await runInteractive(command, {
@@ -298,6 +317,7 @@ export async function startInteractive(command: string | undefined, t: Messages)
     cwd: process.cwd(),
     loadProject,
     listAuthIds: (root) => new SuiteCloud(root).listAuthIds(),
+    savedLanguage,
   });
   clack.note(formatCommand(args), t.interactive.equivalent);
   if (!(await clackPrompter.confirm(t.interactive.run, true))) {

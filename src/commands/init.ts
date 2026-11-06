@@ -2,22 +2,34 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { writeGenerated } from '../core/generate.js';
 import {
+  applyProjectTemplate,
+  DEFAULT_PROJECT_TEMPLATE,
+  listProjectTemplates,
+  loadProjectTemplate,
+  parseTemplateSpec,
+  type ProjectTemplateSource,
+  type TemplateFile,
+} from '../core/project-template.js';
+import {
   assertEmptyFolder,
   ensureGitignore,
   installDependencies,
   projectFolderName,
   scaffoldFiles,
   type ScaffoldOptions,
+  scaffoldTokens,
 } from '../core/scaffold.js';
 import { SuiteCloud } from '../core/suitecloud.js';
 import { NskError } from '../errors.js';
-import { formatExamples, type Messages } from '../i18n.js';
+import { format, formatExamples, type Messages } from '../i18n.js';
 
 export interface InitOptions {
   suiteapp: boolean;
   publisherId?: string;
   projectId?: string;
   projectVersion: string;
+  /** Built-in template id, folder or git repository (see parseTemplateSpec). */
+  template: string;
   install: boolean;
   force: boolean;
 }
@@ -26,6 +38,8 @@ export interface InitDeps {
   cwd: string;
   suitecloud: Pick<SuiteCloud, 'createProject'>;
   install: (dir: string) => Promise<void>;
+  /** Reads the template's files (clones git templates). */
+  loadTemplate?: (source: ProjectTemplateSource) => Promise<TemplateFile[]>;
   /** Version of the running nsk, pinned in the new project's devDependencies. */
   nskVersion?: string;
 }
@@ -39,6 +53,11 @@ export function registerInit(program: Command, t: Messages, version: string): vo
     .option('--publisher-id <id>', t.init.publisherId)
     .option('--project-id <id>', t.init.projectId)
     .option('--project-version <version>', t.init.projectVersion, '1.0.0')
+    .option(
+      '-t, --template <template>',
+      format(t.init.template, { templates: listProjectTemplates().map((template) => template.id).join(', ') }),
+      DEFAULT_PROJECT_TEMPLATE,
+    )
     .option('--no-install', t.init.noInstall)
     .option('--force', t.init.force, false)
     .addHelpText('after', formatExamples(t.help.examples, t.init.examples))
@@ -75,14 +94,18 @@ export async function runInit(name: string, options: InitOptions, deps: InitDeps
   const scaffold: ScaffoldOptions = { name, suiteApp, nskVersion: deps.nskVersion };
   const dir = join(deps.cwd, projectFolderName(scaffold));
   assertEmptyFolder(dir, options.force);
+  // Read the template first: a wrong path or repository must fail before anything is created.
+  const template = await (deps.loadTemplate ?? loadProjectTemplate)(parseTemplateSpec(options.template, deps.cwd));
 
   await deps.suitecloud.createProject({
     name,
     suiteApp: suiteApp && { ...suiteApp, projectVersion: options.projectVersion },
     overwrite: options.force,
   });
-  writeGenerated(scaffoldFiles(dir, scaffold), options.force);
-  ensureGitignore(join(dir, '.gitignore'), ['node_modules', '.env']);
+  const applied = applyProjectTemplate(scaffoldFiles(dir, scaffold), template, dir, scaffoldTokens(scaffold));
+  // The folder held only what suitecloud just created, unless --force; template files may replace those.
+  writeGenerated(applied.files, true);
+  ensureGitignore(join(dir, '.gitignore'), ['node_modules', '.env', ...applied.gitignore]);
   if (options.install) await deps.install(dir);
   return dir;
 }

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,7 +8,7 @@ import type { CreateProjectOptions } from '../../src/core/suitecloud.js';
 
 let cwd: string;
 
-const defaults: InitOptions = { suiteapp: false, projectVersion: '1.0.0', install: true, force: false };
+const defaults: InitOptions = { suiteapp: false, projectVersion: '1.0.0', template: 'minimal', install: true, force: false };
 
 /** Fake suitecloud: creates the folder and files `project:create` would. */
 function fakeDeps() {
@@ -100,6 +100,28 @@ describe('runInit', () => {
 
     await runInit('demo', { ...defaults, force: true }, deps);
     expect(deps.suitecloud.createProject).toHaveBeenCalledWith(expect.objectContaining({ overwrite: true }));
+  });
+
+  it('lays the standard template over the project, with tokens filled for SuiteApps', async () => {
+    const options = { ...defaults, template: 'standard', suiteapp: true, publisherId: 'com.acme', projectId: 'myapp' };
+    const dir = await runInit('app', options, fakeDeps());
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.scripts).toMatchObject({ build: 'nsk build', test: 'vitest run', lint: 'biome check' });
+    expect(pkg.devDependencies).toHaveProperty('typescript');
+    expect(pkg.devDependencies).toHaveProperty('vitest');
+    expect(existsSync(join(dir, 'src/Source/App/_EntryPoints/ue_customer_email.ts'))).toBe(true);
+    expect(existsSync(join(dir, '.vscode/tasks.json'))).toBe(true);
+    expect(existsSync(join(dir, '_gitignore'))).toBe(false);
+    expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toContain('!.vscode\ncoverage\n');
+    expect(readFileSync(join(dir, 'biome.json'), 'utf8')).toContain('"!src/FileCabinet/SuiteApps/com.acme.myapp"');
+    expect(readFileSync(join(dir, 'test/App/lib/email.test.ts'), 'utf8')).toContain("'../../../src/Source/App/lib/email'");
+  });
+
+  it('reads the template before creating anything', async () => {
+    const deps = { ...fakeDeps(), loadTemplate: vi.fn(async () => Promise.reject(new Error('no such template'))) };
+    await expect(runInit('demo', defaults, deps)).rejects.toThrow('no such template');
+    expect(deps.suitecloud.createProject).not.toHaveBeenCalled();
   });
 
   it('rejects invalid project names', async () => {

@@ -27,6 +27,7 @@
   "files": [
     "dist",
     "templates",
+    "project-templates",
     "snippets"
   ],
   "engines": {

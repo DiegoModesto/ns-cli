@@ -100,13 +100,22 @@ describe('runInteractive', () => {
 
   describe('init', () => {
     it('account customization project', async () => {
-      const { prompt } = fakePrompter(['demo', 'acp', false]);
+      const { prompt } = fakePrompter(['demo', 'acp', 'standard', false]);
       expect(await runInteractive('init', deps(prompt))).toEqual(['init', 'demo', '--no-install']);
+    });
+
+    it('passes a built-in or custom template', async () => {
+      const minimal = fakePrompter(['demo', 'acp', 'minimal', true]);
+      expect(await runInteractive('init', deps(minimal.prompt))).toEqual(['init', 'demo', '--template', 'minimal']);
+      const custom = fakePrompter(['demo', 'acp', 'custom', ' github:acme/ns-template ', true]);
+      expect(await runInteractive('init', deps(custom.prompt))).toEqual([
+        'init', 'demo', '--template', 'github:acme/ns-template',
+      ]);
     });
 
     it('SuiteApp with ids, a custom version and --force for a folder that is not empty', async () => {
       write('com.acme.app/notes.txt', 'x');
-      const { prompt } = fakePrompter(['app', 'suiteapp', 'com.acme', 'app', '2.0.0', true, true]);
+      const { prompt } = fakePrompter(['app', 'suiteapp', 'com.acme', 'app', '2.0.0', true, 'standard', true]);
       expect(await runInteractive('init', deps(prompt))).toEqual([
         'init', 'app', '--suiteapp', '--publisher-id', 'com.acme', '--project-id', 'app', '--project-version', '2.0.0',
         '--force',

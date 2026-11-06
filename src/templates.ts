@@ -17,6 +17,9 @@ export interface Template {
 // Works from both src/ (tests) and dist/ (published package): templates/ is a sibling of either.
 export const templatesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'templates');
 
+/** Starter projects for `nsk init --template`: one folder per template. */
+export const projectTemplatesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'project-templates');
+
 export function loadTemplates(): Template[] {
   return JSON.parse(readFileSync(join(templatesDir, 'manifest.json'), 'utf8')) as Template[];
 }

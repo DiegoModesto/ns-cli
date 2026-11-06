@@ -104,18 +104,20 @@ nsk init my-project -t github:acme/ns-template#v2    # your own template (folder
 
 It runs `suitecloud project:create` (which still writes `manifest.xml`, `deploy.xml` and `suitecloud.config.js`), adds `package.json`, `tsconfig.json`, `ns.config.json`, `rollup.config.mjs` and `src/Source/`, lays the template over them and runs `npm install` (skip it with `--no-install`). The folder is `<name>` or, for SuiteApps, `<publisherid>.<projectid>`. A folder that is not empty is only used with `--force`.
 
-**Language (`-l, --language`):** `typescript` (default and recommended) or `javascript`. In JavaScript, the AMD scripts (`define`) live directly in `src/FileCabinet/SuiteScripts` (for SuiteApps, `SuiteApps/<publisherid>.<projectid>`): there is no `tsconfig`, rollup or `nsk build`, and `package.json` only has `watch`, `upload`, `deploy` and `validate`. In interactive mode, **TypeScript (recommended)** is listed first.
+The `.js` files go to a folder named after the project in PascalCase: `nsk init my-project` uses `src/FileCabinet/SuiteScripts/MyProject` (tsconfig `outDir`) and uploads to `/SuiteScripts/MyProject/...`, so projects sharing an account do not mix their files. For SuiteApps the folder is still `SuiteApps/<publisherid>.<projectid>`.
+
+**Language (`-l, --language`):** `typescript` (default and recommended) or `javascript`. In JavaScript, the AMD scripts (`define`) live directly in `src/FileCabinet/SuiteScripts/<ProjectName>` (for SuiteApps, `SuiteApps/<publisherid>.<projectid>`): there is no `tsconfig`, rollup or `nsk build`, `package.json` only has `watch`, `upload`, `deploy` and `validate`, and `ns.config.json` points `scriptsDir` to that folder (used by `nsk generate`). In interactive mode, **TypeScript (recommended)** is listed first.
 
 #### Project templates
 
 | Template | What it adds |
 |---|---|
-| `standard` (default) | `src/Source/App/{_EntryPoints,lib,services}` layout with an example User Event; tests with [Vitest](https://vitest.dev) and mocks of the `N/*` modules in `test/mocks/N`; lint and formatting with [Biome](https://biomejs.dev); `.vscode/` (`nsk watch`/`upload`/`build` tasks, recommended extensions, format on save); GitHub Actions running lint, typecheck, tests and build; `README.md` |
+| `standard` (default) | `src/Source/App/{_EntryPoints,lib,services}` layout with an example User Event; tests with [Vitest](https://vitest.dev) and mocks of the `N/*` modules in `test/mocks/N`; lint and formatting with [Biome](https://biomejs.dev); `.vscode/` (`nsk watch`/`upload`/`build` tasks, the [snippets](#vs-code-snippets) installed in the project, recommended extensions, format on save); GitHub Actions running lint, typecheck, tests and build; `README.md` |
 | `minimal` | Only what `nsk init` always generates (tsconfig, rollup, empty `src/Source/`) |
 
-In JavaScript, `standard` has the same layout and example in `src/FileCabinet/SuiteScripts/App`, tests in `test/*.test.js` (`loadScript()` from `test/amd.js` loads the AMD file and passes the `test/mocks/N` mocks as its dependencies), Biome, `.vscode/` and CI (lint and tests). `minimal` only has `package.json` with the `nsk` scripts.
+In JavaScript, `standard` has the same layout and example in `src/FileCabinet/SuiteScripts/<ProjectName>/App`, tests in `test/*.test.js` (`loadScript()` from `test/amd.js` loads the AMD file and passes the `test/mocks/N` mocks as its dependencies), Biome, `.vscode/` and CI (lint and tests). `minimal` only has `package.json` with the `nsk` scripts.
 
-`standard` scripts: `npm test`, `npm run typecheck` (scripts and tests), `npm run lint`, `npm run format`, plus `build`, `watch`, `upload` and `deploy`. Linting uses Biome instead of ESLint because `typescript-eslint` does not work with TypeScript 7 yet.
+`standard` scripts: `npm test`, `npm run typecheck` (scripts and tests), `npm run lint`, `npm run format`, plus `build`, `watch`, `upload` and `deploy`. After `nsk generate`, run `npm run format` to bring the file in line with Biome (the unused-parameters rule is off, since entry points always receive `context`). Linting uses Biome instead of ESLint because `typescript-eslint` does not work with TypeScript 7 yet.
 
 In tests, every `N/<module>` import loads `test/mocks/N/<module>.ts` (set up in `vitest.config.mjs`), so you control NetSuite with `vi.mocked(search.create).mockReturnValue(...)`. When a script uses a module with no mock yet, add the file exporting `vi.fn()` for the functions it uses.
 
@@ -125,7 +127,7 @@ In tests, every `N/<module>` import loads `test/mocks/N/<module>.ts` (set up in 
 - `.gitignore` (or `_gitignore`) has its lines added to the project's `.gitignore`.
 - Other files replace the generated ones (for example, your own `tsconfig.json`).
 - `template.json` (optional, with a `description`) and `.git` are not copied.
-- In text files and in file paths (e.g. a `{{outDir}}` folder), the markers `{{name}}`, `{{packageName}}`, `{{sourceDir}}` (`src/Source`), `{{outDir}}` (e.g. `src/FileCabinet/SuiteScripts`) and `{{fileCabinetFolder}}` (e.g. `/SuiteScripts`) are filled in; other `{{...}}` are left as they are.
+- In text files and in file paths (e.g. a `{{outDir}}` folder), the markers `{{name}}`, `{{packageName}}`, `{{sourceDir}}` (`src/Source`), `{{outDir}}` (e.g. `src/FileCabinet/SuiteScripts/MyProject`) and `{{fileCabinetFolder}}` (e.g. `/SuiteScripts/MyProject`) are filled in; other `{{...}}` are left as they are.
 
 A template that does not exist or cannot be cloned fails before any file is created.
 
@@ -154,7 +156,7 @@ nsk generate user-event-script ue_sales_order --dir App/_EntryPoints --object --
 | `--record-type` | Deployment record, e.g. `SALESORDER` (required with `--object`) |
 | `--force` | Overwrite existing files (by default nothing is overwritten) |
 
-Destination: TypeScript goes to the tsconfig `rootDir`; JavaScript goes to `FileCabinet/SuiteScripts` (in SuiteApps, `FileCabinet/SuiteApps/<publisherid>.<projectid>`). For now `--object` supports Client Script and User Event Script, the types the XML template covers.
+Destination: TypeScript goes to the tsconfig `rootDir`; JavaScript goes to `scriptsDir` from `ns.config.json` or, without it, to `FileCabinet/SuiteScripts` (in SuiteApps, `FileCabinet/SuiteApps/<publisherid>.<projectid>`). For now `--object` supports Client Script and User Event Script, the types the XML template covers.
 
 ### `nsk upload`
 
@@ -233,6 +235,7 @@ Example `ns.config.json` (every field is optional):
   "sourceDir": "src/Source",                  // overrides compilerOptions.rootDir
   "outDir": "src/FileCabinet/SuiteScripts",   // overrides compilerOptions.outDir
   "bundler": "rollup",                        // runs "rollup -c" after a clean check (set by nsk init)
+  "scriptsDir": "src/FileCabinet/SuiteScripts/MyProject", // where nsk generate creates JavaScript scripts
   "protectedAuthIds": ["production"]          // ask before deploy/upload/watch on these auth IDs
 }
 ```
@@ -272,11 +275,13 @@ Built-in best practices:
 
 [`snippets/NetSuiteSnippets.json`](snippets/NetSuiteSnippets.json) contains the same templates as VS Code snippets (`ns*` prefixes for JavaScript, `ts*` for TypeScript), plus imports and utilities.
 
+Projects created from the `standard` template already have the snippets in `.vscode/netsuite.code-snippets` (the project's language plus XML): VS Code loads that file by itself, nothing to install. To use them in any project, install them as global snippets:
+
 1. `Ctrl/Command + Shift + P` → **Snippets: Configure Snippets** → **New Global Snippets file...**
 2. Paste the content of `snippets/NetSuiteSnippets.json` and save.
 3. Type a prefix (e.g. `tsUserEvent`) in a `.ts` file and press `Tab`.
 
-The snippets are the source of the templates: after changing the JSON, run `npm run sync:templates` to regenerate the `templates/` folder. CI fails if they are out of sync.
+The snippets are the source of the templates: after changing the JSON, run `npm run sync:templates` to regenerate the `templates/` folder and the project templates' `.code-snippets`. CI fails if they are out of sync.
 
 ## Development
 

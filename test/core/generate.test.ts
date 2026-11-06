@@ -34,6 +34,12 @@ describe.each(cases)('planGenerate ($os)', ({ p, root }) => {
     expect(file!.content).toBe(readTemplate(userEvent, 'typescript'));
   });
 
+  it('puts JavaScript scripts in scriptsDir when ns.config.json sets it', () => {
+    const scriptsDir = p.join(root, 'src', 'FileCabinet', 'SuiteScripts', 'Demo');
+    const [file] = planGenerate(userEvent, 'ue_order', { ...js, dir: 'App' }, { ...project, scriptsDir }, p);
+    expect(file!.path).toBe(p.join(scriptsDir, 'App', 'ue_order.js'));
+  });
+
   it('puts JavaScript scripts in SuiteScripts, accepting the extension in the name', () => {
     const [file] = planGenerate(userEvent, 'ue_sales_order.js', js, project, p);
     expect(file!.path).toBe(p.join(root, 'src', 'FileCabinet', 'SuiteScripts', 'ue_sales_order.js'));

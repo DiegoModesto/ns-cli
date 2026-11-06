@@ -51,14 +51,14 @@ describe('runInit', () => {
     expect(project.typescript).toEqual({
       tsconfig: join(dir, 'tsconfig.json'),
       sourceDir: join(dir, 'src/Source'),
-      outDir: join(dir, 'src/FileCabinet/SuiteScripts'),
+      outDir: join(dir, 'src/FileCabinet/SuiteScripts/Demo'),
     });
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
     expect(pkg.scripts.build).toBe('nsk build');
     expect(pkg.devDependencies).toHaveProperty('typescript');
     expect(pkg.devDependencies).not.toHaveProperty('@diegomodesto/ns');
-    expect(readFileSync(join(dir, 'rollup.config.mjs'), 'utf8')).toContain("const outDir = 'src/FileCabinet/SuiteScripts';");
+    expect(readFileSync(join(dir, 'rollup.config.mjs'), 'utf8')).toContain("const outDir = 'src/FileCabinet/SuiteScripts/Demo';");
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toBe('node_modules\nproject.json\n\n# nsk\n.env\n');
   });
 
@@ -112,6 +112,9 @@ describe('runInit', () => {
     expect(pkg.devDependencies).toHaveProperty('vitest');
     expect(existsSync(join(dir, 'src/Source/App/_EntryPoints/ue_customer_email.ts'))).toBe(true);
     expect(existsSync(join(dir, '.vscode/tasks.json'))).toBe(true);
+    const snippets = readFileSync(join(dir, '.vscode/netsuite.code-snippets'), 'utf8');
+    expect(snippets).toContain('"prefix": "tsUserEvent"');
+    expect(snippets).not.toContain('"prefix": "nsUserEvent"');
     expect(existsSync(join(dir, '_gitignore'))).toBe(false);
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toContain('!.vscode\ncoverage\n');
     expect(readFileSync(join(dir, 'biome.json'), 'utf8')).toContain('"!src/FileCabinet/SuiteApps/com.acme.myapp"');
@@ -124,16 +127,17 @@ describe('runInit', () => {
 
     const project = loadProject(dir);
     expect(project.typescript).toBeNull();
+    expect(project.scriptsDir).toBe(join(dir, 'src/FileCabinet/SuiteScripts/Demo'));
     expect(existsSync(join(dir, 'tsconfig.json'))).toBe(false);
     expect(existsSync(join(dir, 'rollup.config.mjs'))).toBe(false);
-    expect(existsSync(join(dir, 'src/FileCabinet/SuiteScripts/App/_EntryPoints/ue_customer_email.js'))).toBe(true);
+    expect(existsSync(join(dir, 'src/FileCabinet/SuiteScripts/Demo/App/_EntryPoints/ue_customer_email.js'))).toBe(true);
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
     expect(pkg.scripts).toMatchObject({ watch: 'nsk watch', test: 'vitest run', lint: 'biome check' });
     expect(pkg.scripts).not.toHaveProperty('build');
     expect(pkg.devDependencies).not.toHaveProperty('typescript');
     expect(readFileSync(join(dir, 'test/App/lib/email.test.js'), 'utf8')).toContain(
-      "loadScript('src/FileCabinet/SuiteScripts/App/lib/email.js')",
+      "loadScript('src/FileCabinet/SuiteScripts/Demo/App/lib/email.js')",
     );
   });
 

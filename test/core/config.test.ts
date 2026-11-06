@@ -164,6 +164,13 @@ describe('loadProject', () => {
     expect(loadProject(root).config.protectedAuthIds).toEqual(['production']);
   });
 
+  it('resolves scriptsDir against the root (null by default)', () => {
+    write('suitecloud.config.js', SUITECLOUD_CONFIG);
+    expect(loadProject(root).scriptsDir).toBeNull();
+    write('ns.config.json', '{ "scriptsDir": "src/FileCabinet/SuiteScripts/Demo" }');
+    expect(loadProject(root).scriptsDir).toBe(join(root, 'src/FileCabinet/SuiteScripts/Demo'));
+  });
+
   it('rejects unknown keys in ns.config.json', () => {
     write('ns.config.json', '{ "srcDir": "src" }');
     expect(() => loadProject(root)).toThrow(/Invalid ns\.config\.json/);

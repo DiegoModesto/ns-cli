@@ -15,7 +15,8 @@ test/
   amd.js            loadScript(): loads an AMD file with its dependencies, as NetSuite does
 ```
 
-`_EntryPoints/ue_customer_email.js` is an example: replace it with your own scripts.
+`_EntryPoints/ue_customer_email.js` is an example: replace it with your own scripts. Create new ones
+with `npx nsk generate <template> <name> --dir App/_EntryPoints`, then run `npm run format`.
 
 ## Commands
 

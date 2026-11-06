@@ -22,6 +22,11 @@ const configSchema = z
      * because TypeScript 7 cannot emit AMD.
      */
     bundler: z.enum(['rollup']).optional(),
+    /**
+     * Folder (inside the FileCabinet) where `nsk generate` writes JavaScript scripts, relative to the project root.
+     * Default: SuiteScripts, or the SuiteApp folder. `nsk init --language javascript` sets SuiteScripts/<Project>.
+     */
+    scriptsDir: z.string().optional(),
     /** Auth IDs (e.g. production) where deploy/upload/watch ask for confirmation unless --yes is given. */
     protectedAuthIds: z.array(z.string()).default([]),
   })
@@ -52,6 +57,8 @@ export interface Project {
   fileCabinetDir: string;
   /** null for JavaScript-only projects (no tsconfig). */
   typescript: TypeScriptSettings | null;
+  /** Absolute ns.config.json scriptsDir, or null to use the default folder. */
+  scriptsDir: string | null;
   /** Set for SuiteApp projects (manifest.xml with projecttype="SUITEAPP"); null for account customization. */
   suiteApp: SuiteAppInfo | null;
   /** Default auth ID from project.json, set by `suitecloud account:setup`. */
@@ -89,6 +96,7 @@ export function loadProject(cwd: string = process.cwd()): Project {
     projectFolder,
     fileCabinetDir,
     typescript: readTypeScriptSettings(root, config),
+    scriptsDir: config.scriptsDir ? join(root, config.scriptsDir) : null,
     suiteApp: readSuiteApp(projectFolder),
     authId: readAuthId(root),
   };

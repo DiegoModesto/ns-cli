@@ -20,7 +20,8 @@ export interface GeneratedFile {
   content: string | Uint8Array;
 }
 
-type GenerateProject = Pick<Project, 'fileCabinetDir' | 'typescript' | 'projectFolder' | 'suiteApp'>;
+type GenerateProject = Pick<Project, 'fileCabinetDir' | 'typescript' | 'projectFolder' | 'suiteApp'> &
+  Partial<Pick<Project, 'scriptsDir'>>;
 
 /**
  * SDF root element per @NScriptType. Only the types whose object the bundled XML template describes correctly
@@ -73,6 +74,7 @@ function scriptsFolder(language: GenerateOptions['language'], project: GenerateP
     }
     return project.typescript.sourceDir;
   }
+  if (project.scriptsDir) return project.scriptsDir;
   return project.suiteApp
     ? p.join(project.fileCabinetDir, 'SuiteApps', `${project.suiteApp.publisherId}.${project.suiteApp.projectId}`)
     : p.join(project.fileCabinetDir, 'SuiteScripts');

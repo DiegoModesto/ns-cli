@@ -4,7 +4,7 @@
 
 CLI para projetos NetSuite SuiteCloud com foco em TypeScript. Funciona como uma camada sobre o [SuiteCloud CLI](https://www.npmjs.com/package/@oracle/suitecloud-cli) oficial: o `suitecloud` continua cuidando da autenticação e do deploy, e o `nsk` cuida do que hoje é manual — compilar o TypeScript, encontrar o `.js` certo no File Cabinet, gerar scripts tipados e trocar de conta.
 
-> **Status:** `0.2.0` — novidades: modo interativo (`nsk -i`) e espanhol, com detecção do idioma do computador. Validado em sandbox: `init`, `generate`, `build`, `validate` e `deploy --dry-run`. `upload`, `watch`, `deploy` e `account` ainda não foram validados contra uma conta real — se algo falhar, abra uma [issue](https://github.com/DiegoModesto/ns-cli/issues).
+> **Status:** `0.3.0` — novidades: modelos de projeto no `nsk init` (`--template`: `standard` com testes, Biome, VS Code e CI; `minimal`; ou um modelo próprio de pasta ou git). Validado em sandbox: `init`, `generate`, `build`, `validate` e `deploy --dry-run`. `upload`, `watch`, `deploy` e `account` ainda não foram validados contra uma conta real — se algo falhar, abra uma [issue](https://github.com/DiegoModesto/ns-cli/issues).
 
 ## Requisitos
 

@@ -80,10 +80,15 @@ Use the arrow keys to move, type to filter long lists (templates, files) and Ent
 ```bash
 nsk --help                   # grouped commands, with explanations
 nsk deploy --help            # options and examples of a command (or: nsk help deploy)
-nsk --help --lang pt         # help in Portuguese
+nsk language                 # show the current language and where it comes from
+nsk language es              # switch to Spanish (en, es, pt)
+nsk language auto            # follow the computer language again
+nsk --help --lang pt         # only this command in Portuguese
 ```
 
-The help is available in English and Portuguese. The language comes from `--lang en|pt` (anywhere in the command line), the `NSK_LANG` variable or the system language (`LC_ALL`, `LC_MESSAGES`, `LANG`): anything starting with `pt` shows Portuguese, everything else English. To pin it: `export NSK_LANG=en`. Error and progress messages stay in English.
+The help, the interactive mode and `nsk language` are available in **English, Portuguese and Spanish**. With no configuration, `nsk` uses the computer language: the terminal one (`LC_ALL`, `LC_MESSAGES`, `LANG`) and, when that is not set, the system language (on macOS, the one in System Settings → Language & Region). Languages without a translation fall back to English.
+
+Precedence: `--lang` (anywhere in the command line) → `NSK_LANG` variable → language saved with `nsk language` → computer language → English. The saved language lives in `~/.config/nsk/settings.json` (Windows: `%APPDATA%\nsk\settings.json`). Error and progress messages stay in English.
 
 ### `nsk init`
 

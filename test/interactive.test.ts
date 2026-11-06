@@ -83,7 +83,7 @@ describe('runInteractive', () => {
     expect(await runInteractive(undefined, deps(prompt))).toEqual(['doctor']);
     expect(asked[0]).toMatchObject({ message: t.interactive.chooseCommand });
     expect(asked[0]!.choices).toEqual([
-      'init', 'doctor', 'generate', 'build', 'templates', 'upload', 'watch', 'validate', 'deploy', 'account',
+      'init', 'doctor', 'generate', 'build', 'templates', 'upload', 'watch', 'validate', 'deploy', 'account', 'language',
     ]);
   });
 
@@ -185,6 +185,12 @@ describe('runInteractive', () => {
     const { prompt, asked } = fakePrompter(['use', 'acme_prd']);
     expect(await runInteractive('account', deps(prompt, authIds))).toEqual(['account', 'use', 'acme_prd']);
     expect(asked[1]!.choices).toEqual(['acme_prd', 'acme_sb1']);
+  });
+
+  it('language offers automatic and the three languages, starting on the saved one', async () => {
+    const { prompt, asked } = fakePrompter(['es']);
+    expect(await runInteractive('language', { ...deps(prompt), savedLanguage: 'pt' })).toEqual(['language', 'es']);
+    expect(asked[0]!.choices).toEqual(['auto', 'en', 'es', 'pt']);
   });
 
   it('templates show asks the language only when there is a choice', async () => {

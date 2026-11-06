@@ -1,4 +1,5 @@
-// Generates templates/ from snippets/NetSuiteSnippets.json so both stay in sync.
+// Generates templates/ (and the project templates' .vscode/netsuite.code-snippets) from
+// snippets/NetSuiteSnippets.json so they stay in sync.
 // Usage: npm run sync:templates
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -76,3 +77,15 @@ for (const [title, snippet] of Object.entries(snippets)) {
 
 writeFileSync(join(templatesDir, 'manifest.json'), JSON.stringify([...manifest.values()], null, 2) + '\n');
 console.log(`Generated ${manifest.size} templates in templates/`);
+
+// Project-level snippets: VS Code loads .vscode/*.code-snippets without any setup. Each project gets the
+// snippets of its language plus the XML ones.
+for (const language of ['typescript', 'javascript']) {
+  const scoped = Object.entries(snippets).filter(([, snippet]) =>
+    snippet.scope.split(',').some((scope) => scope === language || scope === 'xml'),
+  );
+  const file = join(root, 'project-templates', language, 'standard', '.vscode', 'netsuite.code-snippets');
+  const header = '// From nsk (snippets/NetSuiteSnippets.json). Type a prefix, e.g. tsUserEvent, and press Tab.\n';
+  writeFileSync(file, header + JSON.stringify(Object.fromEntries(scoped), null, 2) + '\n');
+  console.log(`Wrote ${scoped.length} snippets to ${file.slice(root.length + 1)}`);
+}

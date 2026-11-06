@@ -18,9 +18,9 @@ export interface ScaffoldOptions {
 
 /** Versions verified together with the generated rollup config (TS 7 checks, rollup + esbuild emit AMD). */
 export const DEV_DEPENDENCIES = {
-  '@hitc/netsuite-types': '^2026.2.4',
+  '@hitc/netsuite-types': '^2026.2.6',
   esbuild: '^0.28.2',
-  rollup: '^4.66.0',
+  rollup: '^4.68.0',
   'rollup-plugin-esbuild': '^6.2.1',
   typescript: '^7.0.2',
 };
@@ -33,11 +33,23 @@ export function projectFolderName(options: ScaffoldOptions): string {
   return options.suiteApp ? `${options.suiteApp.publisherId}.${options.suiteApp.projectId}` : options.name;
 }
 
-/** Folder that holds the AMD files (compiled or hand-written): SuiteScripts, or the SuiteApp's own folder. */
+/**
+ * Folder that holds the AMD files (compiled or hand-written): SuiteScripts/<ProjectName>, so projects sharing an
+ * account do not mix their files, or the SuiteApp's own folder.
+ */
 export function scaffoldOutDir(options: ScaffoldOptions): string {
   return options.suiteApp
     ? `src/FileCabinet/SuiteApps/${options.suiteApp.publisherId}.${options.suiteApp.projectId}`
-    : 'src/FileCabinet/SuiteScripts';
+    : `src/FileCabinet/SuiteScripts/${pascalCase(options.name)}`;
+}
+
+/** "meu-projeto" → "MeuProjeto", "DiegoTests" → "DiegoTests", "sales_order.v2" → "SalesOrderV2". */
+export function pascalCase(name: string): string {
+  return name
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((part) => part[0]!.toUpperCase() + part.slice(1))
+    .join('');
 }
 
 /** Values for the {{token}} markers in project templates. */
@@ -58,6 +70,7 @@ export function scaffoldFiles(dir: string, options: ScaffoldOptions): GeneratedF
   if (options.language === 'javascript') {
     return [
       { path: join(dir, 'package.json'), content: json(javascriptPackageJson(options.name, options.nskVersion)) },
+      { path: join(dir, 'ns.config.json'), content: json({ scriptsDir: outDir }) },
       { path: join(dir, outDir, '.gitkeep'), content: '' },
     ];
   }

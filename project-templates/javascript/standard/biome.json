@@ -17,6 +17,13 @@
       "quoteStyle": "single"
     }
   },
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noUnusedFunctionParameters": "off"
+      }
+    }
+  },
   "json": {
     "formatter": {
       "expand": "always"

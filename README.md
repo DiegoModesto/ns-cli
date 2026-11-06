@@ -98,10 +98,13 @@ Cria um projeto SuiteCloud já pronto para TypeScript, a partir de um modelo de 
 nsk init meu-projeto                     # account customization project, modelo standard
 nsk init meu-app --suiteapp --publisher-id com.acme --project-id myapp [--project-version 1.0.0]
 nsk init meu-projeto --template minimal  # só a configuração do TypeScript
+nsk init meu-projeto --language javascript           # JavaScript, sem build
 nsk init meu-projeto -t github:acme/ns-template#v2   # modelo próprio (pasta ou repositório git)
 ```
 
 Roda o `suitecloud project:create` (que continua gerando `manifest.xml`, `deploy.xml` e `suitecloud.config.js`), adiciona `package.json`, `tsconfig.json`, `ns.config.json`, `rollup.config.mjs` e `src/Source/`, aplica o modelo por cima e executa `npm install` (pule com `--no-install`). A pasta criada é `<nome>` ou, em SuiteApps, `<publisherid>.<projectid>`. Uma pasta que não está vazia só é usada com `--force`.
+
+**Linguagem (`-l, --language`):** `typescript` (padrão e recomendado) ou `javascript`. Em JavaScript, os scripts AMD (`define`) ficam direto em `src/FileCabinet/SuiteScripts` (em SuiteApps, `SuiteApps/<publisherid>.<projectid>`): não há `tsconfig`, rollup nem `nsk build`, e o `package.json` traz só `watch`, `upload`, `deploy` e `validate`. No modo interativo, a pergunta mostra **TypeScript (recomendado)** primeiro.
 
 #### Modelos de projeto
 
@@ -109,6 +112,8 @@ Roda o `suitecloud project:create` (que continua gerando `manifest.xml`, `deploy
 |---|---|
 | `standard` (padrão) | Estrutura `src/Source/App/{_EntryPoints,lib,services}` com um User Event de exemplo; testes com [Vitest](https://vitest.dev) e mocks dos módulos `N/*` em `test/mocks/N`; lint e formatação com [Biome](https://biomejs.dev); `.vscode/` (tarefas `nsk watch`/`upload`/`build`, extensões recomendadas, formatar ao salvar); GitHub Actions rodando lint, typecheck, testes e build; `README.md` |
 | `minimal` | Só o que o `nsk init` sempre gera (tsconfig, rollup, `src/Source/` vazio) |
+
+Em JavaScript, o `standard` traz a mesma estrutura e o mesmo exemplo em `src/FileCabinet/SuiteScripts/App`, testes em `test/*.test.js` (o `loadScript()` de `test/amd.js` carrega o arquivo AMD e entrega os mocks de `test/mocks/N` como dependências), Biome, `.vscode/` e CI (lint e testes). O `minimal` traz só o `package.json` com os scripts do `nsk`.
 
 Scripts do `standard`: `npm test`, `npm run typecheck` (scripts e testes), `npm run lint`, `npm run format`, além de `build`, `watch`, `upload` e `deploy`. O lint usa Biome em vez de ESLint porque o `typescript-eslint` ainda não funciona com o TypeScript 7.
 
@@ -120,7 +125,7 @@ Nos testes, todo import de `N/<módulo>` carrega `test/mocks/N/<módulo>.ts` (co
 - `.gitignore` (ou `_gitignore`) tem as linhas adicionadas ao `.gitignore` do projeto.
 - Os outros arquivos substituem os gerados (por exemplo, um `tsconfig.json` próprio).
 - `template.json` (opcional, com `description`) e `.git` não são copiados.
-- Em arquivos de texto, os marcadores `{{name}}`, `{{packageName}}`, `{{sourceDir}}` (`src/Source`), `{{outDir}}` (ex.: `src/FileCabinet/SuiteScripts`) e `{{fileCabinetFolder}}` (ex.: `/SuiteScripts`) são preenchidos; outros `{{...}}` ficam como estão.
+- Em arquivos de texto e nos caminhos dos arquivos (ex.: uma pasta `{{outDir}}`), os marcadores `{{name}}`, `{{packageName}}`, `{{sourceDir}}` (`src/Source`), `{{outDir}}` (ex.: `src/FileCabinet/SuiteScripts`) e `{{fileCabinetFolder}}` (ex.: `/SuiteScripts`) são preenchidos; outros `{{...}}` ficam como estão.
 
 Um modelo que não existe ou não pode ser clonado falha antes de criar qualquer arquivo.
 
@@ -290,7 +295,7 @@ src/
   commands/          comandos do CLI (um arquivo por comando)
   core/              config, caminhos, wrappers do suitecloud/tsc/rollup, fila de upload do watch, scaffold do init
 templates/           templates gerados (javascript/, typescript/, sdf/, manifest.json)
-project-templates/   modelos de projeto do nsk init (standard/, minimal/)
+project-templates/   modelos de projeto do nsk init (typescript/ e javascript/: standard, minimal)
 snippets/            snippets do VS Code (fonte dos templates)
 scripts/             scripts de manutenção
 test/                testes

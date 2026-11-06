@@ -4,10 +4,14 @@ import { NskError } from '../errors.js';
 import { execaRunner, notStarted, type Runner } from './exec.js';
 import type { GeneratedFile } from './generate.js';
 
+export type ProjectLanguage = 'typescript' | 'javascript';
+
 export interface ScaffoldOptions {
   /** Project name (package.json name is derived from it). */
   name: string;
   suiteApp: { publisherId: string; projectId: string } | null;
+  /** TypeScript (compiled into the FileCabinet) or JavaScript written directly in the FileCabinet. */
+  language: ProjectLanguage;
   /** Version of nsk itself, added as a devDependency so the npm scripts work without a global install. */
   nskVersion?: string;
 }
@@ -29,7 +33,7 @@ export function projectFolderName(options: ScaffoldOptions): string {
   return options.suiteApp ? `${options.suiteApp.publisherId}.${options.suiteApp.projectId}` : options.name;
 }
 
-/** Folder that receives the AMD files: SuiteScripts, or the SuiteApp's own folder. */
+/** Folder that holds the AMD files (compiled or hand-written): SuiteScripts, or the SuiteApp's own folder. */
 export function scaffoldOutDir(options: ScaffoldOptions): string {
   return options.suiteApp
     ? `src/FileCabinet/SuiteApps/${options.suiteApp.publisherId}.${options.suiteApp.projectId}`
@@ -51,6 +55,12 @@ export function scaffoldTokens(options: ScaffoldOptions): Record<string, string>
 /** Files nsk adds on top of what `suitecloud project:create` generates. */
 export function scaffoldFiles(dir: string, options: ScaffoldOptions): GeneratedFile[] {
   const outDir = scaffoldOutDir(options);
+  if (options.language === 'javascript') {
+    return [
+      { path: join(dir, 'package.json'), content: json(javascriptPackageJson(options.name, options.nskVersion)) },
+      { path: join(dir, outDir, '.gitkeep'), content: '' },
+    ];
+  }
   return [
     { path: join(dir, 'package.json'), content: json(packageJson(options.name, options.nskVersion)) },
     { path: join(dir, 'tsconfig.json'), content: json(tsconfig(outDir)) },
@@ -87,9 +97,28 @@ export async function installDependencies(dir: string, runner: Runner = execaRun
   }
 }
 
+/** 0.0.0 is a build from source, which is not on npm. */
+function nskDependency(nskVersion: string | undefined): Record<string, string> {
+  return nskVersion && nskVersion !== '0.0.0' ? { '@diegomodesto/ns': `^${nskVersion}` } : {};
+}
+
+/** JavaScript projects need no compiler: nsk only uploads, watches and deploys. */
+function javascriptPackageJson(name: string, nskVersion: string | undefined) {
+  return {
+    name: packageName(name),
+    private: true,
+    scripts: {
+      watch: 'nsk watch',
+      upload: 'nsk upload',
+      deploy: 'nsk deploy',
+      validate: 'nsk validate',
+    },
+    devDependencies: nskDependency(nskVersion),
+  };
+}
+
 function packageJson(name: string, nskVersion: string | undefined) {
-  // 0.0.0 is a build from source, which is not on npm.
-  const nsk = nskVersion && nskVersion !== '0.0.0' ? { '@diegomodesto/ns': `^${nskVersion}` } : {};
+  const nsk = nskDependency(nskVersion);
   return {
     name: packageName(name),
     private: true,

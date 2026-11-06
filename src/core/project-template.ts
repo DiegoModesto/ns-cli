@@ -5,6 +5,7 @@ import { NskError } from '../errors.js';
 import { projectTemplatesDir, renderTemplate } from '../templates.js';
 import { execaRunner, notStarted, type Runner } from './exec.js';
 import type { GeneratedFile } from './generate.js';
+import type { ProjectLanguage } from './scaffold.js';
 
 export interface ProjectTemplateInfo {
   id: string;
@@ -34,8 +35,12 @@ const TEMPLATE_INFO = 'template.json';
 /** npm drops .gitignore from published packages, so the bundled templates ship it as _gitignore. */
 const GITIGNORE_NAMES = new Set(['.gitignore', '_gitignore']);
 
-/** Built-in project templates: each folder of project-templates/ with its template.json description. */
-export function listProjectTemplates(dir: string = projectTemplatesDir): ProjectTemplateInfo[] {
+/** Built-in project templates: each folder of project-templates/<language>/ with its template.json description. */
+export function listProjectTemplates(
+  language: ProjectLanguage = 'typescript',
+  root: string = projectTemplatesDir,
+): ProjectTemplateInfo[] {
+  const dir = path.join(root, language);
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => ({ id: entry.name, description: readDescription(path.join(dir, entry.name)) }))
@@ -49,10 +54,13 @@ export function listProjectTemplates(dir: string = projectTemplatesDir): Project
 export function parseTemplateSpec(
   spec: string,
   cwd: string,
-  builtins: string[] = listProjectTemplates().map((template) => template.id),
+  language: ProjectLanguage = 'typescript',
+  builtins: string[] = listProjectTemplates(language).map((template) => template.id),
   p: typeof path = path,
 ): ProjectTemplateSource {
-  if (builtins.includes(spec)) return { kind: 'builtin', id: spec, dir: p.join(projectTemplatesDir, spec) };
+  if (builtins.includes(spec)) {
+    return { kind: 'builtin', id: spec, dir: p.join(projectTemplatesDir, language, spec) };
+  }
 
   const [location = '', ref] = spec.split('#', 2);
   const github = location.match(/^github:([\w.-]+\/[\w.-]+?)(?:\.git)?$/);
@@ -122,7 +130,7 @@ export interface AppliedTemplate {
 /**
  * Lays the template over the files nsk generates for every project: package.json is merged (scripts and
  * dependencies are added or replaced), .gitignore lines are appended, other files replace the generated ones.
- * {{token}} markers are filled in text files.
+ * {{token}} markers are filled in text files and in file paths (e.g. a "{{outDir}}" folder).
  */
 export function applyProjectTemplate(
   base: GeneratedFile[],
@@ -134,7 +142,7 @@ export function applyProjectTemplate(
   const files = new Map(base.map((file) => [file.path, file]));
   const gitignore: string[] = [];
   for (const file of template) {
-    const target = p.join(root, ...file.path.split('/'));
+    const target = p.join(root, ...renderTemplate(file.path, tokens).split('/'));
     const content = isText(file.content) ? renderTemplate(file.content.toString('utf8'), tokens) : file.content;
     if (GITIGNORE_NAMES.has(file.path)) {
       const lines = String(content).split(/\r?\n/).map((line) => line.trim());

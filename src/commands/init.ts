@@ -1,5 +1,5 @@
 import { join, relative } from 'node:path';
-import type { Command } from 'commander';
+import { type Command, Option } from 'commander';
 import { writeGenerated } from '../core/generate.js';
 import {
   applyProjectTemplate,
@@ -16,6 +16,7 @@ import {
   installDependencies,
   projectFolderName,
   scaffoldFiles,
+  type ProjectLanguage,
   type ScaffoldOptions,
   scaffoldTokens,
 } from '../core/scaffold.js';
@@ -28,6 +29,7 @@ export interface InitOptions {
   publisherId?: string;
   projectId?: string;
   projectVersion: string;
+  language: ProjectLanguage;
   /** Built-in template id, folder or git repository (see parseTemplateSpec). */
   template: string;
   install: boolean;
@@ -53,6 +55,9 @@ export function registerInit(program: Command, t: Messages, version: string): vo
     .option('--publisher-id <id>', t.init.publisherId)
     .option('--project-id <id>', t.init.projectId)
     .option('--project-version <version>', t.init.projectVersion, '1.0.0')
+    .addOption(
+      new Option('-l, --language <language>', t.init.language).choices(['typescript', 'javascript']).default('typescript'),
+    )
     .option(
       '-t, --template <template>',
       format(t.init.template, { templates: listProjectTemplates().map((template) => template.id).join(', ') }),
@@ -91,11 +96,11 @@ export async function runInit(name: string, options: InitOptions, deps: InitDeps
     suiteApp = { publisherId: options.publisherId, projectId: options.projectId };
   }
 
-  const scaffold: ScaffoldOptions = { name, suiteApp, nskVersion: deps.nskVersion };
+  const scaffold: ScaffoldOptions = { name, suiteApp, language: options.language, nskVersion: deps.nskVersion };
   const dir = join(deps.cwd, projectFolderName(scaffold));
   assertEmptyFolder(dir, options.force);
   // Read the template first: a wrong path or repository must fail before anything is created.
-  const template = await (deps.loadTemplate ?? loadProjectTemplate)(parseTemplateSpec(options.template, deps.cwd));
+  const template = await (deps.loadTemplate ?? loadProjectTemplate)(parseTemplateSpec(options.template, deps.cwd, options.language));
 
   await deps.suitecloud.createProject({
     name,

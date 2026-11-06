@@ -63,6 +63,18 @@ Rode dentro de um projeto SuiteCloud (em qualquer subpasta):
 
 Termina com código `1` se algo estiver faltando (CLI não instalado, `ns.config.json` inválido, conta não configurada).
 
+### Modo interativo
+
+Não sabe qual comando usar? Abra o menu e responda as perguntas, como no `suitecloud -i`:
+
+```bash
+nsk                          # sem argumentos, no terminal: abre o menu
+nsk -i                       # menu com todos os comandos
+nsk deploy -i                # só as perguntas de um comando
+```
+
+Use as setas para navegar, digite para filtrar listas longas (templates, arquivos) e Enter para confirmar. O menu só pergunta o que faz sentido para o projeto: lista os templates, os arquivos que podem ser enviados e os auth IDs configurados, só oferece `--object` para os tipos com objeto SDF, só pergunta `--asv` em account customization projects e só pergunta se sobrescreve quando o arquivo já existe. No final, mostra o **comando equivalente** (por exemplo `nsk deploy --dry-run`) e pergunta se pode executar; assim, da próxima vez, dá para rodar direto. `Ctrl+C` cancela a qualquer momento.
+
 ### Ajuda e idioma
 
 ```bash

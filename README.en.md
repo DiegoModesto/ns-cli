@@ -63,6 +63,18 @@ Run it inside a SuiteCloud project (from any subfolder):
 
 It exits with code `1` when something is missing (CLI not installed, invalid `ns.config.json`, account not set up).
 
+### Interactive mode
+
+Not sure which command to use? Open the menu and answer the questions, like `suitecloud -i`:
+
+```bash
+nsk                          # no arguments, in a terminal: opens the menu
+nsk -i                       # menu with every command
+nsk deploy -i                # only the questions of one command
+```
+
+Use the arrow keys to move, type to filter long lists (templates, files) and Enter to confirm. The menu only asks what makes sense for the project: it lists the templates, the files that can be uploaded and the configured auth IDs, offers `--object` only for the types with an SDF object, asks `--asv` only in account customization projects and asks about overwriting only when the file already exists. At the end it shows the **equivalent command** (e.g. `nsk deploy --dry-run`) and asks whether to run it, so next time you can run it directly. `Ctrl+C` cancels at any time.
+
 ### Help and language
 
 ```bash

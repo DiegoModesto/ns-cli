@@ -38,9 +38,10 @@ export function buildProgram(locale: Locale, version: string): Command {
       subcommandTerm: (command) => placeholders(base.subcommandTerm(command)),
       optionDescription: (option) => describeOption(option, t),
     })
-    // Read and removed from argv by cli.ts before parsing; declared only so the help lists it.
+    // --lang and -i are read and removed from argv by cli.ts before parsing; declared so the help lists them.
     .option('--lang <lang>', t.help.lang)
-    .addHelpText('after', `\n${t.help.footer}`);
+    .option('-i, --interactive', t.interactive.option)
+    .addHelpText('after', `\n${t.interactive.footer}\n${t.help.footer}`);
 
   program.commandsGroup(t.help.groups.project);
   registerInit(program, t, version);

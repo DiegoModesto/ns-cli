@@ -39,8 +39,8 @@ function fakeRunner(result: Partial<ExecResult> = {}) {
 }
 
 describe('listProjectTemplates', () => {
-  it('lists the built-in templates with the default first', () => {
-    const templates = listProjectTemplates();
+  it.each(['typescript', 'javascript'] as const)('lists the built-in %s templates with the default first', (language) => {
+    const templates = listProjectTemplates(language);
     expect(templates.map((template) => template.id)).toEqual(['standard', 'minimal']);
     expect(templates.every((template) => template.description.length > 0)).toBe(true);
   });
@@ -53,19 +53,19 @@ describe.each([
   const builtins = ['standard', 'minimal'];
 
   it('recognizes built-in templates', () => {
-    expect(parseTemplateSpec('minimal', cwd, builtins, p)).toEqual({
+    expect(parseTemplateSpec('minimal', cwd, 'javascript', builtins, p)).toEqual({
       kind: 'builtin',
       id: 'minimal',
-      dir: p.join(projectTemplatesDir, 'minimal'),
+      dir: p.join(projectTemplatesDir, 'javascript', 'minimal'),
     });
   });
 
   it('expands github: shorthands, with an optional branch or tag', () => {
-    expect(parseTemplateSpec('github:acme/ns-template', cwd, builtins, p)).toEqual({
+    expect(parseTemplateSpec('github:acme/ns-template', cwd, 'typescript', builtins, p)).toEqual({
       kind: 'git',
       url: 'https://github.com/acme/ns-template.git',
     });
-    expect(parseTemplateSpec('github:acme/ns-template.git#v2', cwd, builtins, p)).toEqual({
+    expect(parseTemplateSpec('github:acme/ns-template.git#v2', cwd, 'typescript', builtins, p)).toEqual({
       kind: 'git',
       url: 'https://github.com/acme/ns-template.git',
       ref: 'v2',
@@ -78,12 +78,12 @@ describe.each([
     ['ssh://git@host/acme/tpl.git', 'ssh://git@host/acme/tpl.git', undefined],
     ['file:///srv/tpl', 'file:///srv/tpl', undefined],
   ])('treats %s as a git repository', (spec, url, ref) => {
-    expect(parseTemplateSpec(spec, cwd, builtins, p)).toEqual({ kind: 'git', url, ...(ref ? { ref } : {}) });
+    expect(parseTemplateSpec(spec, cwd, 'typescript', builtins, p)).toEqual({ kind: 'git', url, ...(ref ? { ref } : {}) });
   });
 
   it('resolves anything else as a folder, so ./standard is the folder and not the built-in', () => {
-    expect(parseTemplateSpec('./standard', cwd, builtins, p)).toEqual({ kind: 'path', dir: p.join(cwd, 'standard') });
-    expect(parseTemplateSpec('../templates/acme', cwd, builtins, p)).toEqual({
+    expect(parseTemplateSpec('./standard', cwd, 'typescript', builtins, p)).toEqual({ kind: 'path', dir: p.join(cwd, 'standard') });
+    expect(parseTemplateSpec('../templates/acme', cwd, 'typescript', builtins, p)).toEqual({
       kind: 'path',
       dir: p.resolve(cwd, '../templates/acme'),
     });
@@ -159,6 +159,15 @@ describe('applyProjectTemplate', () => {
     expect(applied.files.find((entry) => entry.path === join(root, 'README.md'))!.content).toBe(
       '# demo in src/FileCabinet/SuiteScripts {{unknown}}',
     );
+  });
+
+  it('fills tokens in file paths', () => {
+    const applied = applyProjectTemplate([], [file('{{outDir}}/App/a.js', 'a')], root, {
+      outDir: 'src/FileCabinet/SuiteApps/com.acme.app',
+    });
+    expect(applied.files.map((entry) => entry.path)).toEqual([
+      join(root, 'src', 'FileCabinet', 'SuiteApps', 'com.acme.app', 'App', 'a.js'),
+    ]);
   });
 
   it('lets template files replace generated ones and copies binary files untouched', () => {

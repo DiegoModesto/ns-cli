@@ -88,9 +88,15 @@ const QUESTIONS: Record<CommandName, (deps: InteractiveDeps) => Promise<string[]
     if (existsSync(target) && readdirSync(target).length > 0 && (await prompt.confirm(i.overwriteFolder, false))) {
       args.push('--force');
     }
+    const language = await prompt.select(i.language, [
+      { value: 'typescript', label: `TypeScript (${i.recommended})`, hint: i.typescriptHint },
+      { value: 'javascript', label: 'JavaScript', hint: i.javascriptHint },
+    ]);
+    if (language === 'javascript') args.push('--language', 'javascript');
+
     const template = await prompt.select(i.projectTemplate, [
       { value: 'standard', label: 'standard', hint: i.standardHint },
-      { value: 'minimal', label: 'minimal', hint: i.minimalHint },
+      { value: 'minimal', label: 'minimal', hint: language === 'javascript' ? i.minimalJavascriptHint : i.minimalHint },
       { value: 'custom', label: i.customTemplate, hint: i.customTemplateHint },
     ]);
     if (template === 'custom') {

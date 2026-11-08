@@ -8,7 +8,7 @@ import type { CreateProjectOptions } from '../../src/core/suitecloud.js';
 
 let cwd: string;
 
-const defaults: InitOptions = { suiteapp: false, projectVersion: '1.0.0', template: 'minimal', install: true, force: false };
+const defaults: InitOptions = { suiteapp: false, projectVersion: '1.0.0', language: 'typescript', template: 'minimal', install: true, force: false };
 
 /** Fake suitecloud: creates the folder and files `project:create` would. */
 function fakeDeps() {
@@ -116,6 +116,25 @@ describe('runInit', () => {
     expect(readFileSync(join(dir, '.gitignore'), 'utf8')).toContain('!.vscode\ncoverage\n');
     expect(readFileSync(join(dir, 'biome.json'), 'utf8')).toContain('"!src/FileCabinet/SuiteApps/com.acme.myapp"');
     expect(readFileSync(join(dir, 'test/App/lib/email.test.ts'), 'utf8')).toContain("'../../../src/Source/App/lib/email'");
+  });
+
+  it('creates a JavaScript project: scripts in the FileCabinet, no compiler', async () => {
+    const options = { ...defaults, language: 'javascript' as const, template: 'standard' };
+    const dir = await runInit('demo', options, fakeDeps());
+
+    const project = loadProject(dir);
+    expect(project.typescript).toBeNull();
+    expect(existsSync(join(dir, 'tsconfig.json'))).toBe(false);
+    expect(existsSync(join(dir, 'rollup.config.mjs'))).toBe(false);
+    expect(existsSync(join(dir, 'src/FileCabinet/SuiteScripts/App/_EntryPoints/ue_customer_email.js'))).toBe(true);
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.scripts).toMatchObject({ watch: 'nsk watch', test: 'vitest run', lint: 'biome check' });
+    expect(pkg.scripts).not.toHaveProperty('build');
+    expect(pkg.devDependencies).not.toHaveProperty('typescript');
+    expect(readFileSync(join(dir, 'test/App/lib/email.test.js'), 'utf8')).toContain(
+      "loadScript('src/FileCabinet/SuiteScripts/App/lib/email.js')",
+    );
   });
 
   it('reads the template before creating anything', async () => {
